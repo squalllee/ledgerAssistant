@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>記帳儀表板 (漫畫風)</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "comic-yellow": "#FFEB3B", // Vibrant Manga Yellow
+                        "comic-black": "#000000",
+                        "comic-white": "#FFFFFF",
+                        "comic-gray": "#E0E0E0",
+                    },
+                    fontFamily: {
+                        "sans": ["'Noto Sans TC'", "sans-serif"],
+                        "display": ["'Noto Sans TC'", "sans-serif"]
+                    },
+                    boxShadow: {
+                        "comic": "4px 4px 0px 0px #000000",
+                        "comic-sm": "2px 2px 0px 0px #000000",
+                        "comic-lg": "6px 6px 0px 0px #000000",
+                    },
+                    borderWidth: {
+                        "3": "3px",
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f0f0f0;
+            background-image:
+                repeating-linear-gradient(45deg,
+                    transparent,
+                    transparent 10px,
+                    #e5e5e5 10px,
+                    #e5e5e5 11px);
+            min-height: 100dvh;
+        }
+
+        .bg-dots {
+            background-image: radial-gradient(#000000 15%, transparent 15%);
+            background-position: 0 0;
+            background-size: 6px 6px;
+            opacity: 0.1;
+        }
+
+        .bg-dots-yellow {
+            background-image: radial-gradient(#FFEB3B 20%, transparent 20%);
+            background-position: 0 0;
+            background-size: 8px 8px;
+        }
+
+        .comic-border {
+            border: 3px solid #000;
+        }
+
+        .text-outline {
+            -webkit-text-stroke: 1px black;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="font-sans text-comic-black antialiased selection:bg-comic-yellow selection:text-black">
+    <div
+        class="relative flex h-full min-h-screen w-full flex-col max-w-md mx-auto overflow-hidden bg-comic-white border-x-4 border-black pb-24 shadow-2xl">
+        <div class="absolute top-0 left-0 w-full h-32 overflow-hidden pointer-events-none opacity-10">
+            <div
+                class="w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB4Mj0iMTAwJSIgeTE9IjAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMDAwIiBzdG9wLW9wYWNpdHk9IjEiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9InRyYW5zcGFyZW50IiBzdG9wLW9wYWNpdHk9IjAiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cGF0aCBkPSJNMCAwIEwxMDAgMTAwIiBzdHJva2U9InVybCgjZykiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==')] bg-cover">
+            </div>
+        </div>
+        <header
+            class="flex items-center justify-between p-6 pt-12 bg-comic-white z-10 sticky top-0 border-b-4 border-black">
+            <div class="flex items-center gap-4">
+                <div class="relative group">
+                    <div class="bg-center bg-no-repeat bg-cover rounded-full size-14 border-4 border-black shadow-comic-sm bg-comic-yellow"
+                        data-alt="User profile avatar"
+                        style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAtC0lsymP0M1acTHFKU3-xweJq9ToopwCj9TWF7gu61U-xbdWYqoIIHloVXh72P6cZTnPoFL22gJQns0dw1TAbNtuXUqvVdN6ohCxyOLgSA2t0ckRAAZIcm6t3mfpoPpygMn-st2-JNBnaVJHheBz4qyf4cUoyCSBRfOY1WslkU9HGmYsW9-9GxhP1g5ktFK9QQnsy7XR5o7yUqFkr6rkPV4GVfkwxI7JDHWB873u-poShyj8c2oJEMYYwsR2oLRJD8qYIwnUHIVt7");'>
+                    </div>
+                    <div class="absolute bottom-0 right-0 size-4 bg-comic-yellow border-2 border-black rounded-full">
+                    </div>
+                </div>
+                <div class="flex flex-col relative">
+                    <h2 class="text-sm font-bold text-gray-600 -mb-1">早安!</h2>
+                    <h1 class="text-2xl font-black uppercase tracking-tighter italic">ALEX</h1>
+                </div>
+            </div>
+            <button
+                class="relative flex items-center justify-center size-12 rounded-full bg-comic-white border-4 border-black hover:bg-comic-yellow hover:-translate-y-1 hover:shadow-comic transition-all active:translate-y-0 active:shadow-none">
+                <span class="material-symbols-outlined text-black font-bold"
+                    style="font-size: 28px;">notifications</span>
+                <span class="absolute top-0 right-0 flex h-4 w-4 -mt-1 -mr-1">
+                    <span
+                        class="animate-bounce absolute inline-flex h-full w-full rounded-full bg-comic-yellow border-2 border-black opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-black"></span>
+                </span>
+            </button>
+        </header>
+        <div class="flex-1 overflow-y-auto px-5 pb-24 no-scrollbar bg-comic-white relative">
+            <div class="absolute inset-0 bg-dots pointer-events-none z-0"></div>
+            <section class="flex flex-col items-center justify-center py-8 relative z-10">
+                <div
+                    class="bg-black text-white px-4 py-1 skew-x-[-10deg] mb-6 shadow-comic-sm border-2 border-transparent">
+                    <h3 class="font-black text-lg skew-x-[10deg] tracking-widest">十月支出</h3>
+                </div>
+                <div class="relative size-64 flex items-center justify-center">
+                    <svg class="size-full rotate-[-90deg] drop-shadow-xl" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" fill="white" r="40" stroke="#000" stroke-width="12"></circle>
+                        <circle cx="50" cy="50" fill="none" r="40" stroke="#f3f4f6" stroke-dasharray="63 188"
+                            stroke-dashoffset="0" stroke-width="10"></circle>
+                        <circle class="opacity-10" cx="50" cy="50" fill="none" r="40" stroke="#000"
+                            stroke-dasharray="63 188" stroke-dashoffset="0" stroke-linecap="butt" stroke-width="11">
+                        </circle>
+                        <circle cx="50" cy="50" fill="none" r="40" stroke="#000" stroke-dasharray="63 188"
+                            stroke-dashoffset="0" stroke-linecap="butt" stroke-width="12"
+                            style="stroke-dasharray: 61 190; stroke-width: 4px; stroke: black; fill: none;"></circle>
+                        <circle cx="50" cy="50" fill="none" r="40" stroke="#000000" stroke-dasharray="50 201"
+                            stroke-dashoffset="-70" stroke-linecap="butt" stroke-width="12"></circle>
+                        <circle cx="50" cy="50" fill="none" r="40" stroke="#FFEB3B" stroke-dasharray="113 138"
+                            stroke-dashoffset="-125" stroke-linecap="butt" stroke-width="12"></circle>
+                        <circle cx="50" cy="50" fill="none" r="34" stroke="#000" stroke-width="2"></circle>
+                        <circle cx="50" cy="50" fill="none" r="46" stroke="#000" stroke-width="2"></circle>
+                    </svg>
+                    <div
+                        class="absolute inset-0 flex flex-col items-center justify-center text-center bg-white/80 rounded-full size-48 m-auto border-2 border-black shadow-[inset_0_0_10px_rgba(0,0,0,0.1)] backdrop-blur-sm z-10">
+                        <span class="text-4xl font-black tracking-tighter text-black italic">$1,240<span
+                                class="text-xl">.50</span></span>
+                        <div
+                            class="flex items-center bg-black text-comic-yellow px-2 py-0.5 mt-1 border border-black skew-x-[-10deg]">
+                            <span class="text-xs font-bold skew-x-[10deg]">+12% vs 上月</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-center gap-6 mt-6 w-full">
+                    <div
+                        class="flex items-center gap-2 bg-white border-2 border-black px-3 py-1 rounded-lg shadow-comic-sm">
+                        <div class="size-4 bg-comic-yellow border-2 border-black"></div>
+                        <span class="text-sm font-bold">飲食</span>
+                    </div>
+                    <div
+                        class="flex items-center gap-2 bg-white border-2 border-black px-3 py-1 rounded-lg shadow-comic-sm">
+                        <div class="size-4 bg-black border-2 border-black"></div>
+                        <span class="text-sm font-bold">交通</span>
+                    </div>
+                    <div
+                        class="flex items-center gap-2 bg-white border-2 border-black px-3 py-1 rounded-lg shadow-comic-sm">
+                        <div class="size-4 bg-gray-200 border-2 border-black relative overflow-hidden">
+                            <div
+                                class="absolute inset-0 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:2px_2px]">
+                            </div>
+                        </div>
+                        <span class="text-sm font-bold">購物</span>
+                    </div>
+                </div>
+            </section>
+            <section class="grid grid-cols-2 gap-4 mt-2 mb-8 relative z-10">
+                <div
+                    class="col-span-2 bg-comic-yellow rounded-xl p-5 border-4 border-black shadow-comic relative overflow-hidden group">
+                    <div
+                        class="absolute inset-0 bg-[radial-gradient(#000_10%,transparent_10%)] [background-size:10px_10px] opacity-10 pointer-events-none">
+                    </div>
+                    <div class="relative z-10">
+                        <div class="flex justify-between items-start mb-2">
+                            <p
+                                class="text-black font-bold uppercase tracking-wide border-b-2 border-black inline-block">
+                                總餘額</p>
+                            <div class="bg-white p-1 border-2 border-black rounded-full">
+                                <span class="material-symbols-outlined text-black block">account_balance_wallet</span>
+                            </div>
+                        </div>
+                        <p class="text-4xl font-black tracking-tight mb-2">$12,450.00</p>
+                        <div
+                            class="inline-flex items-center gap-1 text-xs font-bold text-white bg-black px-2 py-1 border-2 border-transparent shadow-sm">
+                            <span class="material-symbols-outlined text-sm">trending_up</span>
+                            <span>+2.5%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl p-4 border-4 border-black shadow-comic flex flex-col gap-2 relative">
+                    <div class="absolute top-2 right-2 size-2 bg-black rounded-full"></div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <div class="p-1 rounded-full bg-black text-white border-2 border-black">
+                            <span class="material-symbols-outlined text-base block">arrow_downward</span>
+                        </div>
+                        <p class="text-gray-600 text-xs font-bold">本月收入</p>
+                    </div>
+                    <p class="text-xl font-black text-black">$5,000.00</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 border-4 border-black shadow-comic flex flex-col gap-2 relative">
+                    <div class="absolute top-2 right-2 size-2 bg-black rounded-full"></div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <div class="p-1 rounded-full bg-white text-black border-2 border-black">
+                            <span class="material-symbols-outlined text-base block">arrow_upward</span>
+                        </div>
+                        <p class="text-gray-600 text-xs font-bold">本月支出</p>
+                    </div>
+                    <p class="text-xl font-black text-black">$3,200.00</p>
+                </div>
+            </section>
+            <section class="mb-6 relative z-10">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="relative">
+                        <div class="absolute -inset-1 bg-comic-yellow transform -skew-x-6 border-2 border-black"></div>
+                        <h3 class="relative text-lg font-black text-black uppercase px-2">近期交易</h3>
+                    </div>
+                    <button
+                        class="text-black text-sm font-bold underline decoration-2 hover:bg-black hover:text-white transition-colors px-1">查看全部</button>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <div
+                        class="flex items-center justify-between bg-white p-3 rounded-lg border-3 border-black shadow-comic-sm hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all cursor-pointer group">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="size-12 rounded-full bg-white border-3 border-black flex items-center justify-center text-black group-hover:bg-comic-yellow transition-colors relative">
+                                <span class="material-symbols-outlined text-3xl">coffee</span>
+                            </div>
+                            <div>
+                                <p class="text-base font-black text-black">星巴克</p>
+                                <p
+                                    class="text-xs font-bold text-gray-500 bg-gray-100 inline-block px-1 border border-gray-300">
+                                    餐飲 • 10:45 AM</p>
+                            </div>
+                        </div>
+                        <p class="font-black text-lg text-black">-$5.50</p>
+                    </div>
+                    <div
+                        class="flex items-center justify-between bg-white p-3 rounded-lg border-3 border-black shadow-comic-sm hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all cursor-pointer group">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="size-12 rounded-full bg-white border-3 border-black flex items-center justify-center text-black group-hover:bg-comic-yellow transition-colors">
+                                <span class="material-symbols-outlined text-3xl">local_taxi</span>
+                            </div>
+                            <div>
+                                <p class="text-base font-black text-black">Uber 行程</p>
+                                <p
+                                    class="text-xs font-bold text-gray-500 bg-gray-100 inline-block px-1 border border-gray-300">
+                                    交通 • 昨天</p>
+                            </div>
+                        </div>
+                        <p class="font-black text-lg text-black">-$24.00</p>
+                    </div>
+                    <div
+                        class="flex items-center justify-between bg-white p-3 rounded-lg border-3 border-black shadow-comic-sm hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all cursor-pointer group">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="size-12 rounded-full bg-white border-3 border-black flex items-center justify-center text-black group-hover:bg-comic-yellow transition-colors">
+                                <span class="material-symbols-outlined text-3xl">shopping_bag</span>
+                            </div>
+                            <div>
+                                <p class="text-base font-black text-black">Apple 直營店</p>
+                                <p
+                                    class="text-xs font-bold text-gray-500 bg-gray-100 inline-block px-1 border border-gray-300">
+                                    購物 • 10月24日</p>
+                            </div>
+                        </div>
+                        <p class="font-black text-lg text-black">-$1,099.00</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 w-full px-4 flex justify-center">
+            <div
+                class="flex items-center gap-2 bg-white border-4 border-black p-2 rounded-2xl shadow-comic-lg relative">
+                <div class="absolute inset-0 bg-dots opacity-20 pointer-events-none rounded-xl"></div>
+                <button
+                    class="relative size-12 rounded-xl flex items-center justify-center text-black border-2 border-transparent hover:border-black hover:bg-gray-100 transition-all">
+                    <span class="material-symbols-outlined text-3xl">home</span>
+                </button>
+                <button
+                    class="relative size-12 rounded-xl flex items-center justify-center text-black border-2 border-transparent hover:border-black hover:bg-gray-100 transition-all">
+                    <span class="material-symbols-outlined text-3xl">pie_chart</span>
+                </button>
+                <div class="flex items-center mx-1 gap-1">
+                    <button
+                        class="h-12 pl-4 pr-3 bg-comic-yellow hover:bg-yellow-400 border-3 border-black rounded-lg flex items-center gap-1 text-black transition-transform active:scale-95 shadow-[2px_2px_0px_0px_#000]">
+                        <span class="material-symbols-outlined text-[24px]">mic</span>
+                        <span class="text-sm font-black hidden sm:block">語音</span>
+                    </button>
+                    <button
+                        class="h-12 pl-3 pr-4 bg-black hover:bg-gray-900 border-3 border-black rounded-lg flex items-center gap-1 text-white transition-transform active:scale-95 shadow-[2px_2px_0px_0px_#888]">
+                        <span class="material-symbols-outlined text-[24px]">center_focus_strong</span>
+                        <span class="text-sm font-black hidden sm:block">掃描</span>
+                    </button>
+                </div>
+                <button
+                    class="relative size-12 rounded-xl flex items-center justify-center text-black border-2 border-transparent hover:border-black hover:bg-gray-100 transition-all">
+                    <span class="material-symbols-outlined text-3xl">credit_card</span>
+                </button>
+                <button
+                    class="relative size-12 rounded-xl flex items-center justify-center text-black border-2 border-transparent hover:border-black hover:bg-gray-100 transition-all">
+                    <span class="material-symbols-outlined text-3xl">person</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
