@@ -78,7 +78,6 @@ struct TransactionLineItemRecord: Codable, Identifiable {
     var id: UUID?
     var transaction_id: UUID
     var user_id: UUID? // The transaction owner
-    var family_member_id: UUID? // Specific payer if split
     var payer_name: String? // Added to preserve name even if member is deleted
     var name: String
     var amount: Double

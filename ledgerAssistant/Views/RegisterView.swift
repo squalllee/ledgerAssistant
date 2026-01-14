@@ -381,7 +381,6 @@ struct RegisterView: View {
                         var lineItem = TransactionLineItemRecord(
                             transaction_id: UUID(), // Will be set by manager
                             user_id: userId,
-                            family_member_id: payerId,
                             payer_name: memberName,
                             name: "\(item.name)\(item.selectedPayers.count > 1 ? " (分)" : "")", 
                             amount: splitAmount,
