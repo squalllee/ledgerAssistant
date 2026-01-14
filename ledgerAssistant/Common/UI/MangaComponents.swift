@@ -342,13 +342,13 @@ struct TimelineCategoryRow: View {
                                     } placeholder: {
                                         Color.gray.opacity(0.1)
                                     }
-                                    .frame(width: 80, height: 80)
-                                    .comicBorder(width: 2, cornerRadius: 10)
+                                    .frame(width: 40, height: 40)
+                                    .comicBorder(width: 2, cornerRadius: 8)
                                     .overlay(
                                         Image(systemName: "magnifyingglass")
-                                            .font(.system(size: 12, weight: .black))
+                                            .font(.system(size: 10, weight: .black))
                                             .foregroundColor(.white)
-                                            .padding(4)
+                                            .padding(2)
                                             .background(Color.black.opacity(0.5))
                                             .clipShape(Circle()),
                                         alignment: .bottomTrailing
