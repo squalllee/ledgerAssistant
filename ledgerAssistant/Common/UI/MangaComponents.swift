@@ -328,7 +328,39 @@ struct TimelineCategoryRow: View {
             .frame(width: 44)
             
             // Content Column
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
+                // Receipts (Now on top)
+                if !catGroup.receiptUrls.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(catGroup.receiptUrls, id: \.self) { url in
+                                Button(action: {
+                                    onReceiptTap?(url)
+                                }) {
+                                    AsyncImage(url: URL(string: url)) { image in
+                                        image.resizable().aspectRatio(contentMode: .fill)
+                                    } placeholder: {
+                                        Color.gray.opacity(0.1)
+                                    }
+                                    .frame(width: 80, height: 80)
+                                    .comicBorder(width: 2, cornerRadius: 10)
+                                    .overlay(
+                                        Image(systemName: "magnifyingglass")
+                                            .font(.system(size: 12, weight: .black))
+                                            .foregroundColor(.white)
+                                            .padding(4)
+                                            .background(Color.black.opacity(0.5))
+                                            .clipShape(Circle()),
+                                        alignment: .bottomTrailing
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
+                        .padding(.bottom, 4)
+                    }
+                }
+
                 // Category Header
                 HStack(alignment: .center, spacing: 12) {
                     Text(catGroup.category.rawValue)
@@ -355,37 +387,7 @@ struct TimelineCategoryRow: View {
                             .comicBorder(width: 1, cornerRadius: 4)
                     }
                     
-                    // Receipts move here
-                    if !catGroup.receiptUrls.isEmpty {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 4) {
-                                ForEach(catGroup.receiptUrls, id: \.self) { url in
-                                    Button(action: {
-                                        onReceiptTap?(url)
-                                    }) {
-                                        AsyncImage(url: URL(string: url)) { image in
-                                            image.resizable().aspectRatio(contentMode: .fill)
-                                        } placeholder: {
-                                            Color.gray.opacity(0.1)
-                                        }
-                                        .frame(width: 40, height: 40)
-                                        .comicBorder(width: 2, cornerRadius: 8)
-                                        .overlay(
-                                            Image(systemName: "magnifyingglass")
-                                                .font(.system(size: 10, weight: .black))
-                                                .foregroundColor(.white)
-                                                .padding(2)
-                                                .background(Color.black.opacity(0.5))
-                                                .clipShape(Circle()),
-                                            alignment: .bottomTrailing
-                                        )
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                }
-                            }
-                            .padding(.vertical, 2)
-                        }
-                    }
+                    
                     
                     Spacer()
                     
