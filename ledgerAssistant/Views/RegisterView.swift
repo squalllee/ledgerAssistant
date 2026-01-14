@@ -24,6 +24,7 @@ struct RegisterView: View {
     @State private var selectedPaymentMethod: String = "CASH" // "CASH" or card ID
     @State private var errorMessage: String? = nil
     @State private var isSaving = false
+    @State private var transactionType: String = "expense" // "expense" or "income"
     
     private let userId = UUID(uuidString: "DE571E1C-681C-44A0-A823-45F4B82B3DD5")!
     
@@ -64,6 +65,29 @@ struct RegisterView: View {
                     } else {
                         ScrollView {
                             VStack(spacing: 24) {
+                                // Transaction Type Picker
+                                HStack(spacing: 0) {
+                                    Button(action: { transactionType = "expense" }) {
+                                        Text("支出")
+                                            .font(.system(size: 16, weight: .black))
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 12)
+                                            .background(transactionType == "expense" ? Color.black : Color.white)
+                                            .foregroundColor(transactionType == "expense" ? .white : .black)
+                                    }
+                                    
+                                    Button(action: { transactionType = "income" }) {
+                                        Text("收入")
+                                            .font(.system(size: 16, weight: .black))
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 12)
+                                            .background(transactionType == "income" ? MangaTheme.yellow : Color.white)
+                                            .foregroundColor(.black)
+                                    }
+                                }
+                                .comicBorder(width: 3, cornerRadius: 15)
+                                .padding(.top)
+
                                 // Receipt Preview
                                 switch source {
                                 case .scan(let img):
@@ -334,7 +358,7 @@ struct RegisterView: View {
                 let totalAmount = items.reduce(0) { $0 + $1.amount }
                 var transaction = TransactionRecord(
                     user_id: userId,
-                    type: "expense",
+                    type: transactionType,
                     amount: totalAmount,
                     note: nil,
                     transaction_date: ISO8601DateFormatter().string(from: Date()),
