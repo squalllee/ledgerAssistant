@@ -34,7 +34,7 @@ struct TimelineDateGroup: Identifiable {
 }
 
 struct SelectedImage: Identifiable {
-    let id = UUID()
+    var id: String { url }
     let url: String
 }
 
