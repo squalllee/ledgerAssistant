@@ -61,7 +61,6 @@ class DashboardViewModel: ObservableObject {
     @Published var totalBalance: String = "$0"
     @Published var monthlyIncome: String = "$0"
     @Published var monthlyExpense: String = "$0"
-    @Published var accounts: [AccountRecord] = []
     @Published var chartSegments: [ChartSegment] = []
     @Published var expenditureChange: String = "0%"
     @Published var selectedCategory: LedgerCategory? = nil
@@ -179,12 +178,9 @@ class DashboardViewModel: ObservableObject {
                     let cat = LedgerCategory(rawValue: catName) ?? .other
                     let txIdStr = tx.id?.uuidString ?? UUID().uuidString
                     
-                    // Resolve Payment Method Name
                     var pMethod: String? = "現金"
                     if let cardId = tx.credit_card_id {
                         pMethod = self.creditCards.first(where: { $0.id == cardId })?.card_name
-                    } else if let accId = tx.account_id {
-                        pMethod = self.accounts.first(where: { $0.id == accId })?.name
                     }
                     
                     // Resolve Payer Names
@@ -335,18 +331,16 @@ class DashboardViewModel: ObservableObject {
             // Fetch Data concurrently
             async let fetchedTransactions = SupabaseManager.shared.fetchTransactions(userId: userId, startDate: startDate, endDate: endDate)
             async let fetchedPrevTransactions = SupabaseManager.shared.fetchTransactions(userId: userId, startDate: prevMonthStartDate, endDate: prevMonthEndDate)
-            async let fetchedAccounts = SupabaseManager.shared.fetchAccounts(userId: userId)
             async let fetchedCategories = SupabaseManager.shared.fetchCategories()
             async let fetchedProfile = SupabaseManager.shared.fetchProfile(userId: userId)
             async let fetchedFamily = SupabaseManager.shared.fetchFamily(userId: userId)
             async let fetchedCards = SupabaseManager.shared.fetchCards(userId: userId)
             
-            let (txs, prevTxs, accounts, cats, profile, family, cards) = try await (fetchedTransactions, fetchedPrevTransactions, fetchedAccounts, fetchedCategories, fetchedProfile, fetchedFamily, fetchedCards)
+            let (txs, prevTxs, cats, profile, family, cards) = try await (fetchedTransactions, fetchedPrevTransactions, fetchedCategories, fetchedProfile, fetchedFamily, fetchedCards)
             
             self.categories = cats
             self.familyMembers = family
             self.creditCards = cards
-            self.accounts = accounts
             self.transactions = txs // Set transactions LAST
             
             // Formatters

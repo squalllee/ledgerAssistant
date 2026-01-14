@@ -87,6 +87,15 @@ class SupabaseManager {
         return cards.first
     }
     
+    func updateCard(card: CreditCardRecord) async throws {
+        guard let id = card.id else { return }
+        try await client
+            .from("credit_cards")
+            .update(card)
+            .eq("id", value: id)
+            .execute()
+    }
+    
     func fetchFamily(userId: UUID) async throws -> [FamilyMemberRecord] {
         let family: [FamilyMemberRecord] = try await client
             .from("family_members")
@@ -135,15 +144,6 @@ class SupabaseManager {
         return categories
     }
     
-    func fetchAccounts(userId: UUID) async throws -> [AccountRecord] {
-        let accounts: [AccountRecord] = try await client
-            .from("accounts")
-            .select()
-            .eq("user_id", value: userId)
-            .execute()
-            .value
-        return accounts
-    }
     
     func fetchTransactions(userId: UUID, startDate: Date? = nil, endDate: Date? = nil) async throws -> [TransactionRecord] {
         let formatter = ISO8601DateFormatter()

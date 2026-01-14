@@ -5,6 +5,8 @@ class ProfileViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var showError = false
+    @Published var showSuccess = false
+    @Published var successMessage: String?
     
     // Account Info
     @Published var name: String = ""
@@ -84,6 +86,8 @@ class ProfileViewModel: ObservableObject {
                 try await SupabaseManager.shared.updateProfile(record: record)
                 await MainActor.run {
                     self.isLoading = false
+                    self.successMessage = "儲存成功！"
+                    self.showSuccess = true
                     completion()
                 }
             } catch {
@@ -130,7 +134,26 @@ class ProfileViewModel: ObservableObject {
             } catch {
                 print("Error deleting card: \(error)")
                 await MainActor.run {
-                    self.errorMessage = "刪除信用卡失敗: \(error.localizedDescription)"
+                    self.errorMessage = "刪除失敗：此卡已有交易紀錄，無法刪除。"
+                    self.showError = true
+                }
+            }
+        }
+    }
+
+    func updateCard(card: CreditCardRecord) {
+        Task {
+            do {
+                try await SupabaseManager.shared.updateCard(card: card)
+                await MainActor.run {
+                    if let index = self.cards.firstIndex(where: { $0.id == card.id }) {
+                        self.cards[index] = card
+                    }
+                }
+            } catch {
+                print("Error updating card: \(error)")
+                await MainActor.run {
+                    self.errorMessage = "更新信用卡失敗: \(error.localizedDescription)"
                     self.showError = true
                 }
             }
@@ -170,9 +193,28 @@ class ProfileViewModel: ObservableObject {
             } catch {
                 print("Error deleting family member: \(error)")
                 await MainActor.run {
-                    self.errorMessage = "刪除家庭成員失敗: \(error.localizedDescription)"
+                    self.errorMessage = "刪除失敗：該成員已有交易，無法刪除。"
                     self.showError = true
                     self.isLoading = false
+                }
+            }
+        }
+    }
+
+    func updateFamilyMember(member: FamilyMemberRecord) {
+        Task {
+            do {
+                try await SupabaseManager.shared.updateFamilyMember(member: member)
+                await MainActor.run {
+                    if let index = self.family.firstIndex(where: { $0.id == member.id }) {
+                        self.family[index] = member
+                    }
+                }
+            } catch {
+                print("Error updating family member: \(error)")
+                await MainActor.run {
+                    self.errorMessage = "更新家庭成員失敗: \(error.localizedDescription)"
+                    self.showError = true
                 }
             }
         }

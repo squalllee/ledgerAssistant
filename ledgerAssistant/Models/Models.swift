@@ -18,13 +18,6 @@ struct CategoryRecord: Codable, Identifiable {
     var color: String?
 }
 
-struct AccountRecord: Codable, Identifiable {
-    var id: UUID?
-    var user_id: UUID
-    var name: String
-    var balance: Double
-}
-
 struct CreditCardRecord: Codable, Identifiable {
     var id: UUID?
     var user_id: UUID?
@@ -43,7 +36,6 @@ struct FamilyMemberRecord: Codable, Identifiable {
 struct TransactionRecord: Codable, Identifiable {
     var id: UUID?
     var user_id: UUID? // Added for RLS
-    var account_id: UUID?
     var credit_card_id: UUID?
     var type: String // "income" or "expense"
     var amount: Double // Total amount
@@ -55,7 +47,7 @@ struct TransactionRecord: Codable, Identifiable {
     var line_items: [TransactionLineItemRecord]?
     
     enum CodingKeys: String, CodingKey {
-        case id, user_id, account_id, credit_card_id, type, amount, note, transaction_date, receipt_url, line_items
+        case id, user_id, credit_card_id, type, amount, note, transaction_date, receipt_url, line_items
     }
     
     // Custom encoding to skip line_items during insert/upsert
@@ -63,7 +55,6 @@ struct TransactionRecord: Codable, Identifiable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(id, forKey: .id)
         try container.encodeIfPresent(user_id, forKey: .user_id)
-        try container.encodeIfPresent(account_id, forKey: .account_id)
         try container.encodeIfPresent(credit_card_id, forKey: .credit_card_id)
         try container.encode(type, forKey: .type)
         try container.encode(amount, forKey: .amount)

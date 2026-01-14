@@ -329,38 +329,6 @@ struct TimelineCategoryRow: View {
             
             // Content Column
             VStack(alignment: .leading, spacing: 10) {
-                // Receipts (Now on top)
-                if !catGroup.receiptUrls.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(catGroup.receiptUrls, id: \.self) { url in
-                                Button(action: {
-                                    onReceiptTap?(url)
-                                }) {
-                                    AsyncImage(url: URL(string: url)) { image in
-                                        image.resizable().aspectRatio(contentMode: .fill)
-                                    } placeholder: {
-                                        Color.gray.opacity(0.1)
-                                    }
-                                    .frame(width: 40, height: 40)
-                                    .comicBorder(width: 2, cornerRadius: 8)
-                                    .overlay(
-                                        Image(systemName: "magnifyingglass")
-                                            .font(.system(size: 10, weight: .black))
-                                            .foregroundColor(.white)
-                                            .padding(2)
-                                            .background(Color.black.opacity(0.5))
-                                            .clipShape(Circle()),
-                                        alignment: .bottomTrailing
-                                    )
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
-                        }
-                        .padding(.bottom, 4)
-                    }
-                }
-
                 // Category Header
                 HStack(alignment: .center, spacing: 12) {
                     Text(catGroup.category.rawValue)
@@ -378,16 +346,46 @@ struct TimelineCategoryRow: View {
                     }
                     
                     if let payer = catGroup.payerName {
-                        Text(payer)
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.black)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(MangaTheme.yellow.opacity(0.3))
-                            .comicBorder(width: 1, cornerRadius: 4)
+                        HStack(spacing: 4) {
+                            Text(payer)
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.black)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(MangaTheme.yellow.opacity(0.3))
+                                .comicBorder(width: 1, cornerRadius: 4)
+                            
+                            // Receipts icons next to payer
+                            if !catGroup.receiptUrls.isEmpty {
+                                ForEach(catGroup.receiptUrls, id: \.self) { url in
+                                    Button(action: {
+                                        onReceiptTap?(url)
+                                    }) {
+                                        Image(systemName: "magnifyingglass")
+                                            .font(.system(size: 10, weight: .black))
+                                            .padding(2)
+                                            .background(Color.white)
+                                            .comicBorder(width: 1, cornerRadius: 4)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                        }
+                    } else if !catGroup.receiptUrls.isEmpty {
+                        // If no payer but has receipts, show them after category/method
+                        ForEach(catGroup.receiptUrls, id: \.self) { url in
+                            Button(action: {
+                                onReceiptTap?(url)
+                            }) {
+                                Image(systemName: "magnifyingglass")
+                                    .font(.system(size: 10, weight: .black))
+                                    .padding(2)
+                                    .background(Color.white)
+                                    .comicBorder(width: 1, cornerRadius: 4)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
                     }
-                    
-                    
                     
                     Spacer()
                     

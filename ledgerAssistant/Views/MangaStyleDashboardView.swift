@@ -302,7 +302,7 @@ struct MangaStyleDashboardView: View {
                     }
                     .padding(.horizontal, 4)
                     
-                    tabButton(icon: "person.fill") {
+                    tabButton(icon: "gearshape.fill") {
                         viewModel.showingProfile = true
                     }
                 }
