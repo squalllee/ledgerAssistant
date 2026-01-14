@@ -6,6 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		ECF3234D2F16235C00FD5B9D /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = ECF3234C2F16235C00FD5B9D /* Auth */; };
+		ECF3234F2F16235C00FD5B9D /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = ECF3234E2F16235C00FD5B9D /* Functions */; };
+		ECF323512F16235C00FD5B9D /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = ECF323502F16235C00FD5B9D /* PostgREST */; };
+		ECF323532F16235C00FD5B9D /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = ECF323522F16235C00FD5B9D /* Realtime */; };
+		ECF323552F16235C00FD5B9D /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = ECF323542F16235C00FD5B9D /* Storage */; };
+		ECF323572F16235C00FD5B9D /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = ECF323562F16235C00FD5B9D /* Supabase */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		ECB6C7DF2F131D88000F1841 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +61,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ECF323512F16235C00FD5B9D /* PostgREST in Frameworks */,
+				ECF3234F2F16235C00FD5B9D /* Functions in Frameworks */,
+				ECF323572F16235C00FD5B9D /* Supabase in Frameworks */,
+				ECF3234D2F16235C00FD5B9D /* Auth in Frameworks */,
+				ECF323552F16235C00FD5B9D /* Storage in Frameworks */,
+				ECF323532F16235C00FD5B9D /* Realtime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +127,12 @@
 			);
 			name = ledgerAssistant;
 			packageProductDependencies = (
+				ECF3234C2F16235C00FD5B9D /* Auth */,
+				ECF3234E2F16235C00FD5B9D /* Functions */,
+				ECF323502F16235C00FD5B9D /* PostgREST */,
+				ECF323522F16235C00FD5B9D /* Realtime */,
+				ECF323542F16235C00FD5B9D /* Storage */,
+				ECF323562F16235C00FD5B9D /* Supabase */,
 			);
 			productName = ledgerAssistant;
 			productReference = ECB6C7D12F131D86000F1841 /* ledgerAssistant.app */;
@@ -195,6 +216,9 @@
 			);
 			mainGroup = ECB6C7C82F131D86000F1841;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				ECF3234B2F16230400FD5B9D /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = ECB6C7D22F131D86000F1841 /* Products */;
 			projectDirPath = "";
@@ -400,11 +424,16 @@
 				DEVELOPMENT_TEAM = GD9579ZT9J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "帳量人生";
+				INFOPLIST_KEY_NSCameraUsageDescription = "需要相機權限以掃描收據";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要麥克風權限以進行語音輸入";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要相簿權限以選擇收據照片";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "需要語音辨識權限以進行語音記帳";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -432,11 +461,16 @@
 				DEVELOPMENT_TEAM = GD9579ZT9J;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "帳量人生";
+				INFOPLIST_KEY_NSCameraUsageDescription = "需要相機權限以掃描收據";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要麥克風權限以進行語音輸入";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要相簿權和以選擇收據照片";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "需要語音辨識權限以進行語音記帳";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -578,6 +612,50 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		ECF3234B2F16230400FD5B9D /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase-community/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		ECF3234C2F16235C00FD5B9D /* Auth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = ECF3234B2F16230400FD5B9D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Auth;
+		};
+		ECF3234E2F16235C00FD5B9D /* Functions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = ECF3234B2F16230400FD5B9D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Functions;
+		};
+		ECF323502F16235C00FD5B9D /* PostgREST */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = ECF3234B2F16230400FD5B9D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = PostgREST;
+		};
+		ECF323522F16235C00FD5B9D /* Realtime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = ECF3234B2F16230400FD5B9D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Realtime;
+		};
+		ECF323542F16235C00FD5B9D /* Storage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = ECF3234B2F16230400FD5B9D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Storage;
+		};
+		ECF323562F16235C00FD5B9D /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = ECF3234B2F16230400FD5B9D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = ECB6C7C92F131D86000F1841 /* Project object */;
 }
