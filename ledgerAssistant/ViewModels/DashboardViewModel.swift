@@ -72,6 +72,9 @@ class DashboardViewModel: ObservableObject {
     
     @Published var weatherIcon: String = "sun.max.fill"
     @Published var temperature: String = "--°C"
+    @Published var currentTime: String = ""
+    
+    private var timer: Timer?
     
     private var weatherManager = WeatherManager.shared
     private var weatherCancellable: AnyCancellable?
@@ -214,6 +217,22 @@ class DashboardViewModel: ObservableObject {
                 self?.temperature = temp
             }
         
+        startTimer()
+    }
+    
+    private func startTimer() {
+        updateTime()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.updateTime()
+        }
+    }
+    
+    private func updateTime() {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        currentTime = formatter.string(from: Date())
+    }
+    
         weatherManager.requestLocation()
         
         Task {

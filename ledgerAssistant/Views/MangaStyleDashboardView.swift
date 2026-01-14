@@ -29,27 +29,27 @@ struct MangaStyleDashboardView: View {
                     
                     // Weather UI
                     Button(action: {
-                        Task {
-                            await viewModel.fetchDashboardData()
-                        }
+                        viewModel.refreshWeather()
                     }) {
-                        VStack(alignment: .trailing, spacing: 2) {
-                            HStack(spacing: 6) {
-                                Image(systemName: viewModel.weatherIcon)
-                                    .font(.system(size: 18))
+                        HStack(spacing: 8) {
+                            VStack(alignment: .trailing, spacing: 0) {
+                                Text(viewModel.currentTime)
+                                    .font(.system(size: 14, weight: .black))
                                     .foregroundColor(.black)
+                                
                                 Text(viewModel.temperature)
                                     .font(.system(size: 16, weight: .black))
                                     .foregroundColor(.black)
                             }
-                            Text("目前天氣")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.gray)
+                            
+                            Image(systemName: viewModel.weatherIcon)
+                                .font(.system(size: 24))
+                                .foregroundColor(MangaTheme.yellow)
+                                .comicBorder(width: 2, cornerRadius: 8)
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.white)
-                        .comicBorder(width: 3, cornerRadius: 12)
+                        .padding(8)
+                        .background(Color.white.opacity(0.8))
+                        .comicBorder(width: 2, cornerRadius: 12)
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
