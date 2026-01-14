@@ -188,16 +188,13 @@ class DashboardViewModel: ObservableObject {
                     }
                     
                     // Resolve Payer Names
-                    let payerIds = Set(items.compactMap { $0.family_member_id })
+                    let payerNames = Set(items.compactMap { $0.payer_name })
                     var pName: String? = nil
-                    if !payerIds.isEmpty {
-                        let names = payerIds.compactMap { pid in
-                            self.familyMembers.first(where: { $0.id == pid })?.name
-                        }
-                        if names.count > 1 {
+                    if !payerNames.isEmpty {
+                        if payerNames.count > 1 {
                             pName = "多位"
                         } else {
-                            pName = names.first
+                            pName = payerNames.first
                         }
                     }
 
@@ -537,15 +534,7 @@ class DashboardViewModel: ObservableObject {
     }
     
     func getPayerName(for item: TransactionLineItemRecord) -> String {
-        // Only check for specific family member assigned
-        if let fmId = item.family_member_id {
-            if let member = familyMembers.first(where: { $0.id == fmId }) {
-                return member.name
-            }
-        }
-        
-        // No longer falling back to transaction owner (userName)
-        return ""
+        return item.payer_name ?? ""
     }
     
     func selectCategory(_ category: LedgerCategory) {

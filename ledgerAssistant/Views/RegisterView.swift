@@ -198,7 +198,8 @@ struct RegisterView: View {
                                 }
                                 
                                 Button(action: {
-                                    items.append(UIItem(name: "", amount: 0, category_id: nil, selectedPayers: [userId]))
+                                    let defaultId = familyMembers.first(where: { $0.is_default == true })?.id ?? familyMembers.first?.id
+                                    items.append(UIItem(name: "", amount: 0, category_id: nil, selectedPayers: defaultId != nil ? [defaultId!] : []))
                                 }) {
                                     HStack {
                                         Image(systemName: "plus.circle.fill")
@@ -323,7 +324,7 @@ struct RegisterView: View {
                     self.categories = cats
                     self.familyMembers = family
                     self.creditCards = cards
-                    let defaultPayerId = family.first?.id
+                    let defaultPayerId = family.first(where: { $0.is_default == true })?.id ?? family.first?.id
                     self.items = itemsExt.map { ext in
                         let catId = cats.first(where: { $0.name == ext.category })?.id
                         return UIItem(
@@ -376,18 +377,18 @@ struct RegisterView: View {
                     let splitAmount = item.amount / max(1, splitCount)
                     
                     for payerId in item.selectedPayers {
+                        let memberName = familyMembers.first(where: { $0.id == payerId })?.name
                         var lineItem = TransactionLineItemRecord(
                             transaction_id: UUID(), // Will be set by manager
                             user_id: userId,
+                            family_member_id: payerId,
+                            payer_name: memberName,
                             name: "\(item.name)\(item.selectedPayers.count > 1 ? " (分)" : "")", 
                             amount: splitAmount,
                             quantity: 1,
                             category_id: item.category_id,
                             title: item.name
                         )
-                        
-                        // All selectable payers are now family members
-                        lineItem.family_member_id = payerId
                         
                         dbLineItems.append(lineItem)
                     }

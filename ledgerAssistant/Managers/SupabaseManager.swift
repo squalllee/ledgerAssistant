@@ -115,6 +115,15 @@ class SupabaseManager {
         return members.first
     }
     
+    func updateFamilyMember(member: FamilyMemberRecord) async throws {
+        guard let id = member.id else { return }
+        try await client
+            .from("family_members")
+            .update(member)
+            .eq("id", value: id)
+            .execute()
+    }
+    
     // MARK: - Dashboard & Financials
     
     func fetchCategories() async throws -> [CategoryRecord] {

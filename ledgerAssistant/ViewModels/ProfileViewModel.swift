@@ -172,6 +172,53 @@ class ProfileViewModel: ObservableObject {
                 await MainActor.run {
                     self.errorMessage = "刪除家庭成員失敗: \(error.localizedDescription)"
                     self.showError = true
+                    self.isLoading = false
+                }
+            }
+        }
+    }
+    
+    func toggleDefaultMember(id: UUID) {
+        isLoading = true
+        Task {
+            do {
+                // Determine new state: only one can be default
+                var updatedFamily = family
+                for i in 0..<updatedFamily.count {
+                    if updatedFamily[i].id == id {
+                        // Toggle this one
+                        let currentState = updatedFamily[i].is_default ?? false
+                        updatedFamily[i].is_default = !currentState
+                    } else {
+                        // Others must be false if the toggled one became true
+                    }
+                }
+                
+                // If we just set one to true, others must be false
+                let memberToggled = updatedFamily.first(where: { $0.id == id })
+                if memberToggled?.is_default == true {
+                    for i in 0..<updatedFamily.count {
+                        if updatedFamily[i].id != id {
+                            updatedFamily[i].is_default = false
+                        }
+                    }
+                }
+                
+                // Save all changes to database
+                for member in updatedFamily {
+                    try await SupabaseManager.shared.updateFamilyMember(member: member)
+                }
+                
+                await MainActor.run {
+                    self.family = updatedFamily
+                    self.isLoading = false
+                }
+            } catch {
+                print("Error updating default member: \(error)")
+                await MainActor.run {
+                    self.errorMessage = "更新預設成員失敗: \(error.localizedDescription)"
+                    self.showError = true
+                    self.isLoading = false
                 }
             }
         }

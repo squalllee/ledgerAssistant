@@ -6,6 +6,7 @@ struct MangaTheme {
     static let black = Color.black
     static let white = Color.white
     static let gray = Color(hex: "E0E0E0")
+    static let pink = Color(hex: "FF4081")
     
     struct Shadow {
         static let sm = Color.black
