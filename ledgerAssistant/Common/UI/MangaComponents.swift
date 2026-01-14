@@ -250,6 +250,153 @@ struct CategoryProgressBar: View {
     }
 }
 
+struct MangaTimelineView: View {
+    let dateGroups: [TimelineDateGroup]
+    var onReceiptTap: ((String) -> Void)? = nil
+    
+    var body: some View {
+        VStack(spacing: 32) {
+            ForEach(dateGroups) { dateGroup in
+                TimelineSection(dateGroup: dateGroup, onReceiptTap: onReceiptTap)
+            }
+        }
+    }
+}
+
+struct TimelineSection: View {
+    let dateGroup: TimelineDateGroup
+    var onReceiptTap: ((String) -> Void)?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Date Header
+            HStack {
+                Text(dateGroup.displayDate)
+                    .font(.system(size: 14, weight: .black))
+                    .foregroundColor(.gray)
+                
+                Spacer()
+                
+                Text("$\(Int(dateGroup.dailyTotal))")
+                    .font(.system(size: 16, weight: .black))
+                    .foregroundColor(.orange)
+            }
+            .padding(.horizontal, 4)
+            
+            // Category Groups with Timeline
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(0..<dateGroup.categoryGroups.count, id: \.self) { index in
+                    let catGroup = dateGroup.categoryGroups[index]
+                    let isLast = index == dateGroup.categoryGroups.count - 1
+                    
+                    TimelineCategoryRow(catGroup: catGroup, isLast: isLast, onReceiptTap: onReceiptTap)
+                }
+            }
+        }
+    }
+}
+
+struct TimelineCategoryRow: View {
+    let catGroup: TimelineCategoryGroup
+    let isLast: Bool
+    var onReceiptTap: ((String) -> Void)?
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 16) {
+            // Timeline Column
+            VStack(spacing: 0) {
+                ZStack {
+                     Circle()
+                        .fill(catGroup.category.color)
+                        .frame(width: 12, height: 12)
+                        .comicBorder(width: 2, cornerRadius: 6)
+                    
+                    // Icon beside the dot
+                    Image(systemName: catGroup.category.icon)
+                        .font(.system(size: 18))
+                        .foregroundColor(catGroup.category.color)
+                        .offset(x: -30)
+                }
+                
+                if !isLast {
+                    Rectangle()
+                        .fill(Color.black.opacity(0.1))
+                        .frame(width: 3)
+                        .frame(maxHeight: .infinity)
+                }
+            }
+            .frame(width: 44)
+            
+            // Content Column
+            VStack(alignment: .leading, spacing: 12) {
+                // Category Header
+                HStack(alignment: .center, spacing: 12) {
+                    Text(catGroup.category.rawValue)
+                        .font(.system(size: 18, weight: .black))
+                        .foregroundColor(.black)
+                    
+                    // Receipts move here
+                    if !catGroup.receiptUrls.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 4) {
+                                ForEach(catGroup.receiptUrls, id: \.self) { url in
+                                    Button(action: {
+                                        onReceiptTap?(url)
+                                    }) {
+                                        AsyncImage(url: URL(string: url)) { image in
+                                            image.resizable().aspectRatio(contentMode: .fill)
+                                        } placeholder: {
+                                            Color.gray.opacity(0.1)
+                                        }
+                                        .frame(width: 40, height: 40)
+                                        .comicBorder(width: 2, cornerRadius: 8)
+                                        .overlay(
+                                            Image(systemName: "magnifyingglass")
+                                                .font(.system(size: 10, weight: .black))
+                                                .foregroundColor(.white)
+                                                .padding(2)
+                                                .background(Color.black.opacity(0.5))
+                                                .clipShape(Circle()),
+                                            alignment: .bottomTrailing
+                                        )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                            .padding(.vertical, 2)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    Text("$\(Int(catGroup.total))")
+                        .font(.system(size: 16, weight: .black))
+                        .foregroundColor(.gray)
+                }
+                
+                // Sub Items
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(catGroup.items) { item in
+                        HStack(spacing: 8) {
+                            Text("└ \(item.name)")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.gray.opacity(0.8))
+                            
+                            Spacer()
+                            
+                            Text("\(Int(item.amount))")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.gray.opacity(0.8))
+                        }
+                        .padding(.leading, 8)
+                    }
+                }
+            }
+            .padding(.bottom, isLast ? 0 : 28)
+        }
+    }
+}
+
 struct TransactionItem: View {
     let icon: String
     let title: String

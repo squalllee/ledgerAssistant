@@ -10,6 +10,27 @@ struct TransactionGroup: Identifiable {
     let originalTransaction: TransactionRecord? // Store for lookup
 }
 
+struct TimelineItem: Identifiable {
+    let id = UUID()
+    let name: String
+    let amount: Double
+}
+
+struct TimelineCategoryGroup: Identifiable {
+    let id: String // Use stable combination ID
+    let category: LedgerCategory
+    let items: [TimelineItem]
+    let total: Double
+    let receiptUrls: [String]
+}
+
+struct TimelineDateGroup: Identifiable {
+    var id: String { displayDate }
+    let displayDate: String
+    let dailyTotal: Double
+    let categoryGroups: [TimelineCategoryGroup]
+}
+
 struct SelectedImage: Identifiable {
     let id = UUID()
     let url: String
@@ -125,13 +146,54 @@ class DashboardViewModel: ObservableObject {
                 originalTransaction: tx
             )
         }.sorted(by: { 
-            // Better sorting: extract the original transaction record to compare dates if needed, 
-            // but for now let's just use the group's date string carefully or better yet, 
-            // since one group = one transaction, we can just sort by the original transactions' dates.
-            // Actually, let's just use the transaction_date from the original record by including it in the group if needed.
-            // For now, sorting by group.id is not useful, let's just make it alphabetical by date string as a fallback.
             $0.date > $1.date 
         })
+    }
+    
+    var timelineGroups: [TimelineDateGroup] {
+        let allTxs = transactions
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.maximumFractionDigits = 0
+        
+        // Group by date string
+        let groupedByDate = Dictionary(grouping: allTxs) { formatDate($0.transaction_date) }
+        
+        return groupedByDate.map { (dateStr, txs) in
+            // Calculate daily total
+            let dailyTotal = txs.reduce(0) { $0 + $1.amount }
+            
+            // Generate category groups for each transaction separately
+            let categoryGroups = txs.flatMap { tx -> [TimelineCategoryGroup] in
+                let itemsByCat = Dictionary(grouping: tx.line_items ?? []) { item in
+                    categories.first(where: { $0.id == item.category_id })?.name ?? ""
+                }
+                
+                return itemsByCat.map { (catName, items) in
+                    let cat = LedgerCategory(rawValue: catName) ?? .other
+                    let txIdStr = tx.id?.uuidString ?? UUID().uuidString
+                    return TimelineCategoryGroup(
+                        id: "\(txIdStr)-\(catName)",
+                        category: cat,
+                        items: items.map { TimelineItem(name: $0.name, amount: $0.amount) },
+                        total: items.reduce(0) { $0 + $1.amount },
+                        receiptUrls: [tx.receipt_url].compactMap { $0 }.filter { !$0.isEmpty }
+                    )
+                }
+            }.sorted { 
+                // Grouping by category name first, then by amount
+                if $0.category == $1.category {
+                    return $0.total > $1.total
+                }
+                return $0.category.rawValue < $1.category.rawValue
+            }
+            
+            return TimelineDateGroup(
+                displayDate: dateStr,
+                dailyTotal: dailyTotal,
+                categoryGroups: categoryGroups
+            )
+        }.sorted { $0.displayDate > $1.displayDate }
     }
     
     private var categories: [CategoryRecord] = []

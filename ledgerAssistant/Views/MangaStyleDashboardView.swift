@@ -204,95 +204,22 @@ struct MangaStyleDashboardView: View {
 //                                    .buttonStyle(PlainButtonStyle())
                             }
                             
-                            LazyVStack(spacing: 24) {
-                                ForEach(viewModel.groupedTransactions) { group in
-                                    VStack(alignment: .leading, spacing: 12) {
-                                        // Transaction Group Header (Date & ID reference)
-                                        HStack {
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                HStack(spacing: 6) {
-                                                    Text(group.date)
-                                                        .font(.system(size: 14, weight: .black))
-                                                        .padding(.horizontal, 8)
-                                                        .padding(.vertical, 2)
-                                                        .background(Color.black)
-                                                        .foregroundColor(.white)
-                                                        .comicBorder(width: 2)
-                                                    
-                                                    // Payment Method Label
-                                                    if let tx = group.originalTransaction {
-                                                        Text(viewModel.getPaymentMethodName(for: tx))
-                                                            .font(.system(size: 10, weight: .black))
-                                                            .padding(.horizontal, 6)
-                                                            .padding(.vertical, 2)
-                                                            .background(MangaTheme.yellow)
-                                                            .comicBorder(width: 2, cornerRadius: 4)
-                                                    }
-                                                }
-                                                
-                                                Text("ID: \(group.id.uuidString.prefix(8))...")
-                                                    .font(.system(size: 10, weight: .bold))
-                                                    .foregroundColor(.gray)
-                                                    .padding(.leading, 4)
-                                            }
-                                            
-                                            Spacer()
-                                            
-                                            // Receipt Thumbnail if available
-                                            if let receiptUrl = group.receiptUrl, !receiptUrl.isEmpty {
-                                                Button(action: {
-                                                    viewModel.selectedImageUrl = receiptUrl
-                                                }) {
-                                                    ZStack {
-                                                        AsyncImage(url: URL(string: receiptUrl)) { image in
-                                                            image.resizable().aspectRatio(contentMode: .fill)
-                                                        } placeholder: {
-                                                            Color.gray.opacity(0.1)
-                                                        }
-                                                        .frame(width: 44, height: 44)
-                                                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                                                        .comicBorder(width: 2, cornerRadius: 6)
-                                                        
-                                                        Image(systemName: "magnifyingglass")
-                                                            .font(.system(size: 12, weight: .black))
-                                                            .foregroundColor(.white)
-                                                            .padding(4)
-                                                            .background(Color.black.opacity(0.6))
-                                                            .clipShape(Circle())
-                                                    }
-                                                }
-                                                .buttonStyle(PlainButtonStyle())
-                                            }
-                                            
-                                            Text("小計: $\(Int(group.subtotal))")
-                                                .font(.system(size: 14, weight: .black))
-                                                .foregroundColor(.black)
-                                                .italic()
-                                        }
-                                        .padding(.horizontal, 4)
-                                        
-                                        // Line Items in this transaction
-                                        VStack(spacing: 12) {
-                                            ForEach(group.lineItems) { item in
-                                                let payerName = viewModel.getPayerName(for: item)
-                                                TransactionItem(
-                                                    icon: viewModel.getCategoryIconForId(item.category_id),
-                                                    title: item.name,
-                                                    subtitle: payerName,
-                                                    amount: "$\(Int(item.amount))",
-                                                    type: group.originalTransaction?.type ?? "expense",
-                                                    iconColor: viewModel.getCategoryColorForId(item.category_id)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                                
-                                if viewModel.groupedTransactions.isEmpty {
+                            VStack(spacing: 24) {
+                                if viewModel.timelineGroups.isEmpty {
                                     Text("本月查無交易資料")
                                         .font(.system(size: 14, weight: .bold))
                                         .foregroundColor(.gray)
                                         .padding()
+                                } else {
+                                    MangaTimelineView(
+                                        dateGroups: viewModel.timelineGroups,
+                                        onReceiptTap: { url in
+                                            viewModel.selectedImageUrl = url
+                                        }
+                                    )
+                                    .padding(20)
+                                    .background(Color.white)
+                                    .comicBorder(width: 3, cornerRadius: 20)
                                 }
                             }
                         }
