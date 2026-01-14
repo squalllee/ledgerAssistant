@@ -22,6 +22,8 @@ struct TimelineCategoryGroup: Identifiable {
     let items: [TimelineItem]
     let total: Double
     let receiptUrls: [String]
+    let paymentMethod: String?
+    let payerName: String?
 }
 
 struct TimelineDateGroup: Identifiable {
@@ -59,6 +61,7 @@ class DashboardViewModel: ObservableObject {
     @Published var totalBalance: String = "$0"
     @Published var monthlyIncome: String = "$0"
     @Published var monthlyExpense: String = "$0"
+    @Published var accounts: [AccountRecord] = []
     @Published var chartSegments: [ChartSegment] = []
     @Published var expenditureChange: String = "0%"
     @Published var selectedCategory: LedgerCategory? = nil
@@ -175,12 +178,37 @@ class DashboardViewModel: ObservableObject {
                 return itemsByCat.map { (catName, items) in
                     let cat = LedgerCategory(rawValue: catName) ?? .other
                     let txIdStr = tx.id?.uuidString ?? UUID().uuidString
+                    
+                    // Resolve Payment Method Name
+                    var pMethod: String? = "現金"
+                    if let cardId = tx.credit_card_id {
+                        pMethod = self.creditCards.first(where: { $0.id == cardId })?.card_name
+                    } else if let accId = tx.account_id {
+                        pMethod = self.accounts.first(where: { $0.id == accId })?.name
+                    }
+                    
+                    // Resolve Payer Names
+                    let payerIds = Set(items.compactMap { $0.family_member_id })
+                    var pName: String? = nil
+                    if !payerIds.isEmpty {
+                        let names = payerIds.compactMap { pid in
+                            self.familyMembers.first(where: { $0.id == pid })?.name
+                        }
+                        if names.count > 1 {
+                            pName = "多位"
+                        } else {
+                            pName = names.first
+                        }
+                    }
+
                     return TimelineCategoryGroup(
                         id: "\(txIdStr)-\(catName)",
                         category: cat,
                         items: items.map { TimelineItem(name: $0.name, amount: $0.amount) },
                         total: items.reduce(0) { $0 + $1.amount },
-                        receiptUrls: [tx.receipt_url].compactMap { $0 }.filter { !$0.isEmpty }
+                        receiptUrls: [tx.receipt_url].compactMap { $0 }.filter { !$0.isEmpty },
+                        paymentMethod: pMethod,
+                        payerName: pName
                     )
                 }
             }.sorted { 
@@ -218,6 +246,13 @@ class DashboardViewModel: ObservableObject {
             }
         
         startTimer()
+        
+        weatherManager.requestLocation()
+        
+        Task {
+            await fetchYearRange()
+            await fetchDashboardData()
+        }
     }
     
     private func startTimer() {
@@ -231,14 +266,6 @@ class DashboardViewModel: ObservableObject {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss"
         currentTime = formatter.string(from: Date())
-    }
-    
-        weatherManager.requestLocation()
-        
-        Task {
-            await fetchYearRange()
-            await fetchDashboardData()
-        }
     }
     
     @MainActor
@@ -319,10 +346,11 @@ class DashboardViewModel: ObservableObject {
             
             let (txs, prevTxs, accounts, cats, profile, family, cards) = try await (fetchedTransactions, fetchedPrevTransactions, fetchedAccounts, fetchedCategories, fetchedProfile, fetchedFamily, fetchedCards)
             
-            self.transactions = txs
             self.categories = cats
             self.familyMembers = family
             self.creditCards = cards
+            self.accounts = accounts
+            self.transactions = txs // Set transactions LAST
             
             // Formatters
             let formatter = NumberFormatter()
@@ -576,5 +604,9 @@ class DashboardViewModel: ObservableObject {
                 self.showingVoiceOverlay = false
             }
         }
+    }
+    
+    func refreshWeather() {
+        weatherManager.requestLocation()
     }
 }

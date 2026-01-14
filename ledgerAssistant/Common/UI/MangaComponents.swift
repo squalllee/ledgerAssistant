@@ -335,6 +335,26 @@ struct TimelineCategoryRow: View {
                         .font(.system(size: 18, weight: .black))
                         .foregroundColor(.black)
                     
+                    if let method = catGroup.paymentMethod {
+                        Text(method)
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.gray)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.gray.opacity(0.1))
+                            .comicBorder(width: 1, cornerRadius: 4)
+                    }
+                    
+                    if let payer = catGroup.payerName {
+                        Text(payer)
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(MangaTheme.yellow.opacity(0.3))
+                            .comicBorder(width: 1, cornerRadius: 4)
+                    }
+                    
                     // Receipts move here
                     if !catGroup.receiptUrls.isEmpty {
                         ScrollView(.horizontal, showsIndicators: false) {
