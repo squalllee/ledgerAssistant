@@ -15,6 +15,14 @@ struct SelectedImage: Identifiable {
     let url: String
 }
 
+struct CategoryStat: Identifiable {
+    let id: UUID = UUID()
+    let category: LedgerCategory
+    let amount: Double
+    let proportion: Double
+    let change: String?
+}
+
 class DashboardViewModel: ObservableObject {
     @Published var selectedYear: Int = Calendar.current.component(.year, from: Date()) {
         didSet { Task { await fetchDashboardData() } }
@@ -23,6 +31,7 @@ class DashboardViewModel: ObservableObject {
         didSet { Task { await fetchDashboardData() } }
     }
     @Published var showingProfile = false
+    @Published var showingReports = false
     @Published var userName: String = ""
     @Published var transactions: [TransactionRecord] = []
     @Published var totalExpenditure: String = "$0"
@@ -33,6 +42,29 @@ class DashboardViewModel: ObservableObject {
     @Published var expenditureChange: String = "0%"
     @Published var selectedCategory: LedgerCategory? = nil
     @Published var selectedImageUrl: String? = nil
+    @Published var monthlyLimit: Double = 10000.0
+    @Published var years: [Int] = [Calendar.current.component(.year, from: Date())]
+    @Published var categoryStats: [CategoryStat] = []
+    @Published var reportType: String = "expense" {
+        didSet { calculateChartSegments(txs: transactions, categories: categories) }
+    }
+    
+    @Published var weatherIcon: String = "sun.max.fill"
+    @Published var temperature: String = "--°C"
+    
+    private var weatherManager = WeatherManager.shared
+    private var weatherCancellable: AnyCancellable?
+    
+    var greeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<11: return "早安!"
+        case 11..<14: return "午安!"
+        case 14..<18: return "下午好!"
+        case 18..<24: return "晚安!"
+        default: return "凌晨好!"
+        }
+    }
     
     // Loaded Resources for lookups
     var familyMembers: [FamilyMemberRecord] = []
@@ -105,8 +137,6 @@ class DashboardViewModel: ObservableObject {
     private var categories: [CategoryRecord] = []
     
     let months = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"]
-
-    let years: [Int] = Array((Calendar.current.component(.year, from: Date())-2)...(Calendar.current.component(.year, from: Date())+1))
     
     private let userId = UUID(uuidString: "DE571E1C-681C-44A0-A823-45F4B82B3DD5")! 
     
@@ -116,13 +146,74 @@ class DashboardViewModel: ObservableObject {
             self?.objectWillChange.send()
         }
         
+        weatherCancellable = Publishers.CombineLatest(weatherManager.$weatherIcon, weatherManager.$temperature)
+            .sink { [weak self] icon, temp in
+                self?.weatherIcon = icon
+                self?.temperature = temp
+            }
+        
+        weatherManager.requestLocation()
+        
         Task {
+            await fetchYearRange()
             await fetchDashboardData()
         }
     }
     
     @MainActor
+    private func fetchYearRange() async {
+        do {
+            let dateStrings = try await SupabaseManager.shared.fetchAllTransactionDates(userId: userId)
+            print("Fetched \(dateStrings.count) transaction dates for year range")
+            
+            let txYears = dateStrings.compactMap { dateStr -> Int? in
+                if let date = Self.isoFormatter.date(from: dateStr) {
+                    return Calendar.current.component(.year, from: date)
+                }
+                if let date = Self.isoFormatterNoFractional.date(from: dateStr) {
+                    return Calendar.current.component(.year, from: date)
+                }
+                if let date = Self.simpleDateFormatter.date(from: String(dateStr.prefix(10))) {
+                    return Calendar.current.component(.year, from: date)
+                }
+                print("Failed to parse year from: \(dateStr)")
+                return nil
+            }
+            
+            print("Found years in transactions: \(Set(txYears))")
+            
+            let currentYear = Calendar.current.component(.year, from: Date())
+            var uniqueYears = Set(txYears)
+            uniqueYears.insert(currentYear)
+            
+            self.years = Array(uniqueYears).sorted()
+            print("Final year range: \(self.years)")
+        } catch {
+            print("Error fetching year range: \(error)")
+        }
+    }
+    
+    func nextMonth() {
+        if selectedMonth == 11 {
+            selectedMonth = 0
+            selectedYear += 1
+        } else {
+            selectedMonth += 1
+        }
+    }
+    
+    func prevMonth() {
+        if selectedMonth == 0 {
+            selectedMonth = 11
+            selectedYear -= 1
+        } else {
+            selectedMonth -= 1
+        }
+    }
+    
+    @MainActor
     func fetchDashboardData() async {
+        // Only request location in init or manual refresh to avoid loops
         do {
             let calendar = Calendar.current
             var components = DateComponents()
@@ -166,6 +257,7 @@ class DashboardViewModel: ObservableObject {
             
             // New Balance Logic: Remaining Budget = Monthly Limit - Current Month Expenses
             let monthlyBudget = profile?.monthly_limit ?? 10000.0
+            self.monthlyLimit = monthlyBudget
             let remainingBalance = monthlyBudget - expense
             
             self.monthlyIncome = formatter.string(from: NSNumber(value: income)) ?? "$\(Int(income))"
@@ -194,36 +286,48 @@ class DashboardViewModel: ObservableObject {
     }
     
     private func calculateChartSegments(txs: [TransactionRecord], categories: [CategoryRecord]) {
-        let expenses = txs.filter { $0.type == "expense" }
-        let totalExpense = expenses.reduce(0) { $0 + $1.amount }
+        let filteredTxs = txs.filter { $0.type == reportType }
+        let totalAmount = filteredTxs.reduce(0) { $0 + $1.amount }
         
-        guard totalExpense > 0 else {
-            self.chartSegments = []
-            return
-        }
+        // Use monthlyLimit for proportions if it's expense, otherwise just use totalAmount
+        let denominator = reportType == "expense" ? max(1.0, monthlyLimit) : max(1.0, totalAmount)
         
         // Group amounts by category_id from line items
         var categoryAmounts: [UUID: Double] = [:]
-        for tx in expenses {
+        for tx in filteredTxs {
             for item in tx.line_items ?? [] {
                 if let catId = item.category_id {
                     categoryAmounts[catId, default: 0] += item.amount
+                } else {
+                    // Group unknown categories under "Other" if possible
+                    let otherCatId = categories.first(where: { $0.name == LedgerCategory.other.rawValue })?.id
+                    if let oid = otherCatId {
+                        categoryAmounts[oid, default: 0] += item.amount
+                    }
                 }
             }
         }
         
-        var segments: [ChartSegment] = []
-        for (catId, amount) in categoryAmounts {
-            let proportion = amount / totalExpense
-            let cat = categories.first { $0.id == catId }
-            let colorHex = cat?.color ?? "000000"
-            segments.append(ChartSegment(proportion: proportion, color: Color(hex: colorHex)))
+        // Calculate Category Stats first
+        var stats: [CategoryStat] = []
+        for cat in LedgerCategory.allCases {
+            let catRecord = categories.first { $0.name == cat.rawValue }
+            let amount = categoryAmounts[catRecord?.id ?? UUID()] ?? 0
+            let proportion = amount / max(1.0, denominator)
+            stats.append(CategoryStat(category: cat, amount: amount, proportion: proportion, change: nil))
         }
         
-        // If there's missing category info or remaining amount, add as "Other"
-        let coveredProportion = segments.reduce(0) { $0 + $1.proportion }
-        if coveredProportion < 0.99 && coveredProportion >= 0 {
-             segments.append(ChartSegment(proportion: 1.0 - coveredProportion, color: .gray))
+        // Sort by amount descending
+        let sortedStats = stats.sorted { $0.amount > $1.amount }
+        self.categoryStats = sortedStats
+        
+        // Generate Chart Segments from the sorted stats to ensure color consistency
+        var segments: [ChartSegment] = []
+        for stat in sortedStats {
+            if stat.amount > 0 {
+                // Ensure we use the color defined in LedgerCategory
+                segments.append(ChartSegment(proportion: stat.proportion, color: stat.category.color))
+            }
         }
         
         self.chartSegments = segments
@@ -247,6 +351,15 @@ class DashboardViewModel: ObservableObject {
         return "ellipsis.circle.fill"
     }
     
+    func getCategoryColorForId(_ categoryId: UUID?) -> Color {
+        guard let id = categoryId else { return .gray }
+        if let catRecord = categories.first(where: { $0.id == id }) {
+            let ledgerCat = LedgerCategory(rawValue: catRecord.name) ?? .other
+            return ledgerCat.color
+        }
+        return .gray
+    }
+    
     func getTransactionTitle(for transaction: TransactionRecord) -> String {
         // 1. Try to get title from the first line item
         if let firstItem = transaction.line_items?.first, !firstItem.name.isEmpty {
@@ -265,34 +378,43 @@ class DashboardViewModel: ObservableObject {
         return "交易"
     }
     
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    
+    private static let isoFormatterNoFractional: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+    
+    private static let displayDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy/MM/dd"
+        return formatter
+    }()
+    
+    private static let simpleDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+
     func formatDate(_ dateString: String?) -> String {
         guard let dateString = dateString else { return "" }
         
-        // Supabase returns ISO8601 usually
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        
-        if let date = isoFormatter.date(from: dateString) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "yyyy/MM/dd"
-            return displayFormatter.string(from: date)
+        if let date = Self.isoFormatter.date(from: dateString) {
+            return Self.displayDateFormatter.string(from: date)
         }
         
-        // If ISO8601 with fractional seconds fails, try without
-        isoFormatter.formatOptions = [.withInternetDateTime]
-        if let date = isoFormatter.date(from: dateString) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "yyyy/MM/dd"
-            return displayFormatter.string(from: date)
+        if let date = Self.isoFormatterNoFractional.date(from: dateString) {
+            return Self.displayDateFormatter.string(from: date)
         }
         
-        // If it's already just a date string or unexpected format, try a simple parser
-        let simpleFormatter = DateFormatter()
-        simpleFormatter.dateFormat = "yyyy-MM-dd"
-        if let date = simpleFormatter.date(from: String(dateString.prefix(10))) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "yyyy/MM/dd"
-            return displayFormatter.string(from: date)
+        if let date = Self.simpleDateFormatter.date(from: String(dateString.prefix(10))) {
+            return Self.displayDateFormatter.string(from: date)
         }
         
         return dateString

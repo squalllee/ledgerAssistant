@@ -426,6 +426,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "帳量人生";
 				INFOPLIST_KEY_NSCameraUsageDescription = "需要相機權限以掃描收據";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "需要定位權限以顯示當前天氣";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要麥克風權限以進行語音輸入";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要相簿權限以選擇收據照片";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "需要語音辨識權限以進行語音記帳";
@@ -463,6 +464,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "帳量人生";
 				INFOPLIST_KEY_NSCameraUsageDescription = "需要相機權限以掃描收據";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "需要定位權限以顯示當前天氣";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "需要麥克風權限以進行語音輸入";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要相簿權和以選擇收據照片";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "需要語音辨識權限以進行語音記帳";

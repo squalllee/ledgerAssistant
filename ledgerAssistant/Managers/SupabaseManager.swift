@@ -81,6 +81,7 @@ class SupabaseManager {
         let cards: [CreditCardRecord] = try await client
             .from("credit_cards")
             .insert(card)
+            .select()
             .execute()
             .value
         return cards.first
@@ -108,6 +109,7 @@ class SupabaseManager {
         let members: [FamilyMemberRecord] = try await client
             .from("family_members")
             .insert(member)
+            .select()
             .execute()
             .value
         return members.first
@@ -134,24 +136,45 @@ class SupabaseManager {
         return accounts
     }
     
-    func fetchTransactions(userId: UUID, startDate: Date, endDate: Date) async throws -> [TransactionRecord] {
+    func fetchTransactions(userId: UUID, startDate: Date? = nil, endDate: Date? = nil) async throws -> [TransactionRecord] {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
-        let startStr = formatter.string(from: startDate)
-        let endStr = formatter.string(from: endDate)
         
-        // Using PostgREST syntax for date filtering
-        // Since user_id moved to line items, we filter transactions that have at least one line item for this user
-        let transactions: [TransactionRecord] = try await client
+        var query = client
             .from("transactions")
             .select("*, line_items:transaction_line_items!inner(*)")
             .eq("line_items.user_id", value: userId)
-            .gte("transaction_date", value: startStr)
-            .lt("transaction_date", value: endStr)
+        
+        if let startDate = startDate {
+            let startStr = formatter.string(from: startDate)
+            query = query.gte("transaction_date", value: startStr)
+        }
+        
+        if let endDate = endDate {
+            let endStr = formatter.string(from: endDate)
+            query = query.lt("transaction_date", value: endStr)
+        }
+        
+        let transactions: [TransactionRecord] = try await query
             .execute()
             .value
         
         return transactions
+    }
+    
+    private struct TransactionDateOnly: Codable {
+        let transaction_date: String?
+    }
+    
+    func fetchAllTransactionDates(userId: UUID) async throws -> [String] {
+        let results: [TransactionDateOnly] = try await client
+            .from("transactions")
+            .select("transaction_date")
+            .eq("user_id", value: userId)
+            .execute()
+            .value
+        
+        return results.compactMap { $0.transaction_date }
     }
     
     // MARK: - Storage & Transactions

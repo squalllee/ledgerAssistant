@@ -15,7 +15,7 @@ struct MangaStyleDashboardView: View {
                 HStack {
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: -2) {
-                            Text("早安!")
+                            Text(viewModel.greeting)
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundColor(.gray)
                             Text(viewModel.userName.isEmpty ? "使用者" : viewModel.userName.uppercased())
@@ -27,23 +27,31 @@ struct MangaStyleDashboardView: View {
                     
                     Spacer()
                     
-                    ZStack(alignment: .topTrailing) {
-                        Button(action: {}) {
-                            Image(systemName: "bell.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.black)
-                                .frame(width: 48, height: 48)
-                                .background(Color.white)
-                                .comicBorder(width: 4, cornerRadius: 24)
+                    // Weather UI
+                    Button(action: {
+                        Task {
+                            await viewModel.fetchDashboardData()
                         }
-                        .buttonStyle(PlainButtonStyle())
-                        
-                        Circle()
-                            .fill(Color.red)
-                            .frame(width: 16, height: 16)
-                            .comicBorder(width: 2, cornerRadius: 8)
-                            .offset(x: 4, y: -4)
+                    }) {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            HStack(spacing: 6) {
+                                Image(systemName: viewModel.weatherIcon)
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.black)
+                                Text(viewModel.temperature)
+                                    .font(.system(size: 16, weight: .black))
+                                    .foregroundColor(.black)
+                            }
+                            Text("目前天氣")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.white)
+                        .comicBorder(width: 3, cornerRadius: 12)
                     }
+                    .buttonStyle(PlainButtonStyle())
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 20)
@@ -69,7 +77,6 @@ struct MangaStyleDashboardView: View {
                                                 .background(viewModel.selectedYear == year ? Color.black : Color.white)
                                                 .foregroundColor(viewModel.selectedYear == year ? .white : .black)
                                                 .comicBorder(width: 2, cornerRadius: 4)
-                                                .comicShadow(offset: viewModel.selectedYear == year ? 2 : 0)
                                         }
                                         .buttonStyle(PlainButtonStyle())
                                         .padding(.vertical, 8)
@@ -87,7 +94,7 @@ struct MangaStyleDashboardView: View {
                                                 viewModel.selectedMonth = index
                                             }
                                         }) {
-                                            Text("\(viewModel.months[index])支出")
+                                            Text("\(viewModel.months[index])")
                                                 .font(.system(size: 18, weight: .black))
                                                 .tracking(viewModel.selectedMonth == index ? 4 : 1)
                                                 .padding(.horizontal, 16)
@@ -96,7 +103,6 @@ struct MangaStyleDashboardView: View {
                                                 .foregroundColor(viewModel.selectedMonth == index ? .white : .black)
                                                 .rotationEffect(.degrees(viewModel.selectedMonth == index ? -10 : 0))
                                                 .comicBorder(width: 2, cornerRadius: 4)
-                                                .comicShadow(offset: viewModel.selectedMonth == index ? 2 : 0)
                                         }
                                         .buttonStyle(PlainButtonStyle())
                                         .padding(.vertical, 10)
@@ -112,7 +118,6 @@ struct MangaStyleDashboardView: View {
                                 HStack(spacing: 12) {
                                     ForEach(LedgerCategory.allCases) { category in
                                         categoryLegend(category: category)
-                                            .foregroundColor(.black)
                                     }
                                 }
                                 .padding(.horizontal, 24)
@@ -133,9 +138,9 @@ struct MangaStyleDashboardView: View {
                                         .border(width: 2, edges: [.bottom], color: .black)
                                     Spacer()
                                     Image(systemName: "creditcard.fill")
+                                        .foregroundColor(.black)
                                         .padding(4)
-                                        .background(Color.white)
-                                        .comicBorder(width: 2, cornerRadius: 20)
+                                        .background(Color.clear)
                                 }
                                 
                                 Text(viewModel.totalBalance)
@@ -155,11 +160,10 @@ struct MangaStyleDashboardView: View {
                             .padding(20)
                             .background(MangaTheme.yellow)
                             .comicBorder(width: 4, cornerRadius: 12)
-                            .comicShadow(offset: 6)
                             
                             HStack(spacing: 16) {
-                                balanceMiniCard(title: "本月收入", amount: viewModel.monthlyIncome, icon: "arrow.down")
-                                balanceMiniCard(title: "本月支出", amount: viewModel.monthlyExpense, icon: "arrow.up")
+                                balanceMiniCard(title: "本月收入", amount: viewModel.monthlyIncome, icon: "dollarsign.circle")
+                                balanceMiniCard(title: "本月支出", amount: viewModel.monthlyExpense, icon: "cart")
                             }
                         }
                         .padding(.horizontal, 24)
@@ -200,7 +204,7 @@ struct MangaStyleDashboardView: View {
 //                                    .buttonStyle(PlainButtonStyle())
                             }
                             
-                            VStack(spacing: 24) {
+                            LazyVStack(spacing: 24) {
                                 ForEach(viewModel.groupedTransactions) { group in
                                     VStack(alignment: .leading, spacing: 12) {
                                         // Transaction Group Header (Date & ID reference)
@@ -273,17 +277,15 @@ struct MangaStyleDashboardView: View {
                                                 let payerName = viewModel.getPayerName(for: item)
                                                 TransactionItem(
                                                     icon: viewModel.getCategoryIconForId(item.category_id),
-                                                    title: item.name + (payerName.isEmpty ? "" : " (\(payerName))"),
-                                                    subtitle: "", // No redundant date needed inside group
-                                                    amount: "-$\(Int(item.amount))"
+                                                    title: item.name,
+                                                    subtitle: payerName,
+                                                    amount: "$\(Int(item.amount))",
+                                                    type: group.originalTransaction?.type ?? "expense",
+                                                    iconColor: viewModel.getCategoryColorForId(item.category_id)
                                                 )
                                             }
                                         }
                                     }
-                                    .padding(16)
-                                    .background(Color.white)
-                                    .comicBorder(width: 2, cornerRadius: 12)
-                                    .comicShadow(offset: 4)
                                 }
                                 
                                 if viewModel.groupedTransactions.isEmpty {
@@ -295,7 +297,7 @@ struct MangaStyleDashboardView: View {
                             }
                         }
                         .padding(.horizontal, 24)
-                        .padding(.bottom, 100)
+                        .padding(.bottom, 120)
                     }
                 }
                 .background(
@@ -324,23 +326,23 @@ struct MangaStyleDashboardView: View {
             VStack {
                 Spacer()
                 HStack(spacing: 8) {
-                    tabButton(icon: "house.fill")
-                    tabButton(icon: "chart.pie.fill")
+                    tabButton(icon: "chart.pie.fill") {
+                        viewModel.showingReports = true
+                    }
                     
-                    HStack(spacing: 4) {
+                    HStack(spacing: 8) {
                         Button(action: {
                             viewModel.startVoiceRecording()
                         }) {
                             HStack(spacing: 4) {
                                 Image(systemName: "mic.fill")
                                 Text("語音")
-                                    .font(.system(size: 12, weight: .black))
+                                    .font(.system(size: 14, weight: .black))
                             }
-                            .padding(.horizontal, 12)
+                            .padding(.horizontal, 16)
                             .frame(height: 48)
                             .background(MangaTheme.yellow)
-                            .comicBorder(width: 3, cornerRadius: 8)
-                            .comicShadow(offset: 2)
+                            .comicBorder(width: 3, cornerRadius: 15)
                         }
                         .buttonStyle(PlainButtonStyle())
                         
@@ -350,14 +352,13 @@ struct MangaStyleDashboardView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "viewfinder")
                                 Text("掃描")
-                                    .font(.system(size: 12, weight: .black))
+                                    .font(.system(size: 14, weight: .black))
                             }
-                            .padding(.horizontal, 12)
+                            .padding(.horizontal, 16)
                             .frame(height: 48)
                             .background(Color.black)
                             .foregroundColor(.white)
-                            .comicBorder(width: 3, cornerRadius: 8)
-                            .comicShadow(offset: 2, color: .gray)
+                            .comicBorder(width: 3, cornerRadius: 15)
                         }
                         .buttonStyle(PlainButtonStyle())
                         .confirmationDialog("選擇收據來源", isPresented: $viewModel.showingScanOptions, titleVisibility: .visible) {
@@ -379,12 +380,19 @@ struct MangaStyleDashboardView: View {
                     }
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(Color.white)
-                .comicBorder(width: 4, cornerRadius: 25)
-                .comicShadow(offset: 6)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 30)
+                .padding(.vertical, 12)
+                .background(
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 30)
+                            .fill(Color.white.opacity(0.9))
+                        DotPattern(opacity: 0.1, spacing: 4)
+                            .clipShape(RoundedRectangle(cornerRadius: 30))
+                    }
+                )
+                .comicBorder(width: 3, cornerRadius: 30)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 34) // Adjust for home indicator
+                .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
             }
         }
         .preferredColorScheme(.light)
@@ -396,6 +404,9 @@ struct MangaStyleDashboardView: View {
         }
         .sheet(isPresented: $viewModel.showingProfile) {
             ProfileView()
+        }
+        .fullScreenCover(isPresented: $viewModel.showingReports) {
+            ReportsView(viewModel: viewModel)
         }
         .sheet(isPresented: $viewModel.showingScanner) {
             ImagePicker(sourceType: viewModel.scannerSource) { image in
@@ -479,7 +490,6 @@ struct MangaStyleDashboardView: View {
                         .background(MangaTheme.yellow)
                         .foregroundColor(.black)
                         .comicBorder(width: 3, cornerRadius: 25)
-                        .comicShadow(offset: 4)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
@@ -506,7 +516,6 @@ struct MangaStyleDashboardView: View {
             .background(isSelected ? MangaTheme.yellow : Color.white)
             .foregroundColor(.black)
             .comicBorder(width: 2, cornerRadius: 8)
-//            .comicShadow(offset: isSelected ? 4 : 2)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -515,10 +524,7 @@ struct MangaStyleDashboardView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Image(systemName: icon)
-                    .padding(4)
-                    .background(icon == "arrow.down" ? Color.black : Color.white)
-                    .foregroundColor(icon == "arrow.down" ? .white : .black)
-                    .comicBorder(width: 2, cornerRadius: 20)
+                    .foregroundColor(.black)
                 Text(title)
                     .font(.system(size: 10, weight: .bold))
                     .foregroundColor(.gray)
@@ -530,8 +536,6 @@ struct MangaStyleDashboardView: View {
         .padding(12)
         .background(Color.white)
         .comicBorder(width: 4, cornerRadius: 12)
-//        .comicShadow(offset: 4)
-   
     }
     
     private func tabButton(icon: String, action: @escaping () -> Void = {}) -> some View {
@@ -551,4 +555,3 @@ struct MangaStyleDashboardView: View {
 #Preview {
     MangaStyleDashboardView()
 }
-

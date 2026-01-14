@@ -47,6 +47,7 @@ struct ComicBorder: ViewModifier {
     
     func body(content: Content) -> some View {
         content
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(color, lineWidth: width)
@@ -54,27 +55,10 @@ struct ComicBorder: ViewModifier {
     }
 }
 
-struct ComicShadow: ViewModifier {
-    var offset: CGFloat = 4
-    var color: Color = .black
-    
-    func body(content: Content) -> some View {
-        content
-            .background(
-                Rectangle()
-                    .fill(color)
-                    .offset(x: offset, y: offset)
-            )
-    }
-}
 
 extension View {
     func comicBorder(width: CGFloat = 3, cornerRadius: CGFloat = 0, color: Color = .black) -> some View {
         modifier(ComicBorder(width: width, cornerRadius: cornerRadius, color: color))
-    }
-    
-    func comicShadow(offset: CGFloat = 4, color: Color = .black) -> some View {
-        modifier(ComicShadow(offset: offset, color: color))
     }
     
     func border(width: CGFloat, edges: [Edge], color: Color) -> some View {

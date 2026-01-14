@@ -171,7 +171,6 @@ struct RegisterView: View {
                                     .padding()
                                     .background(Color.white)
                                     .comicBorder(width: 2, cornerRadius: 12)
-                                    .comicShadow(offset: 2)
                                 }
                                 
                                 Button(action: {
