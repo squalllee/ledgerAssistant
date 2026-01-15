@@ -82,7 +82,7 @@ struct MangaStyleDashboardView: View {
                                         .padding(.vertical, 8)
                                     }
                                 }
-                                .padding(.horizontal, 24)
+                                .padding(.horizontal, 12)
                             }
 
                             // Month Selector
@@ -108,7 +108,7 @@ struct MangaStyleDashboardView: View {
                                         .padding(.vertical, 10)
                                     }
                                 }
-                                .padding(.horizontal, 24)
+                                .padding(.horizontal, 12)
                             }
                             
                             DonutChart(amount: viewModel.totalExpenditure, segments: viewModel.chartSegments, changeLabel: viewModel.expenditureChange)
@@ -166,7 +166,7 @@ struct MangaStyleDashboardView: View {
                                 balanceMiniCard(title: "本月支出", amount: viewModel.monthlyExpense, icon: "cart")
                             }
                         }
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, 12)
                         
                         // Recent Transactions
                         VStack(alignment: .leading, spacing: 16) {
@@ -179,29 +179,7 @@ struct MangaStyleDashboardView: View {
                                     .rotationEffect(.degrees(-6))
                                 
                                 Spacer()
-                                
-//                                Button(action: {
-//                                    viewModel.startVoiceRecording()
-//                                }) {
-//                                    VStack(spacing: 4) {
-//                                        Image(systemName: "mic.fill")
-//                                            .font(.system(size: 20))
-//                                        Text("語音")
-//                                            .font(.system(size: 10, weight: .bold))
-//                                    }
-//                                    .foregroundColor(.black)
-//                                    .frame(width: 60, height: 60)
-//                                    .background(Color.white)
-//                                    .comicBorder(width: 2, cornerRadius: 30)
-//                                    .comicShadow(offset: 2)
-//                                }
-//                                .buttonStyle(PlainButtonStyle())
-//                                
-//                                Button("查看全部") {}
-//                                    .font(.system(size: 14, weight: .bold))
-//                                    .underline()
-//                                    .foregroundColor(.black)
-//                                    .buttonStyle(PlainButtonStyle())
+                            
                             }
                             
                             VStack(spacing: 24) {

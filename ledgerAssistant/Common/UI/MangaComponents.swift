@@ -302,7 +302,7 @@ struct TimelineCategoryRow: View {
     var onReceiptTap: ((String) -> Void)?
     
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: 1) {
             // Timeline Column
             VStack(spacing: 0) {
                 ZStack {
@@ -311,11 +311,11 @@ struct TimelineCategoryRow: View {
                         .frame(width: 12, height: 12)
                         .comicBorder(width: 2, cornerRadius: 6)
                     
-                    // Icon beside the dot
+                    // Icon beside the dot (Shifted right with the line)
                     Image(systemName: catGroup.category.icon)
                         .font(.system(size: 18))
                         .foregroundColor(catGroup.category.color)
-                        .offset(x: -25)
+                        .offset(x: -18)
                 }
                 
                 if !isLast {
@@ -325,12 +325,12 @@ struct TimelineCategoryRow: View {
                         .frame(maxHeight: .infinity)
                 }
             }
-            .frame(width: 28)
+            .frame(width: 40)
             
             // Content Column
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 5) {
                 // Category Header
-                HStack(alignment: .center, spacing: 12) {
+                HStack(alignment: .center, spacing: 8) {
                     Text(catGroup.category.rawValue)
                         .font(.system(size: 18, weight: .black))
                         .foregroundColor(.black)
@@ -505,4 +505,8 @@ struct ProfileSection<Content: View>: View {
                 .comicBorder(width: 3, cornerRadius: 12)
         }
     }
+}
+
+#Preview {
+    MangaStyleDashboardView()
 }
