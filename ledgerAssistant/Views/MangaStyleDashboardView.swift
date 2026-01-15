@@ -53,7 +53,7 @@ struct MangaStyleDashboardView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 12)
                 .padding(.vertical, 20)
                 .background(Color.white)
                 .border(width: 4, edges: [.bottom], color: .black)
@@ -120,7 +120,7 @@ struct MangaStyleDashboardView: View {
                                         categoryLegend(category: category)
                                     }
                                 }
-                                .padding(.horizontal, 24)
+                                .padding(.horizontal, 12)
                             }
                             .padding(.top, 10)
                         }
@@ -217,13 +217,13 @@ struct MangaStyleDashboardView: View {
                                             viewModel.selectedImageUrl = url
                                         }
                                     )
-                                    .padding(20)
+                                    .padding(12)
                                     .background(Color.white)
                                     .comicBorder(width: 3, cornerRadius: 20)
                                 }
                             }
                         }
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, 12)
                         .padding(.bottom, 120)
                     }
                 }
@@ -317,7 +317,7 @@ struct MangaStyleDashboardView: View {
                     }
                 )
                 .comicBorder(width: 3, cornerRadius: 30)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 12)
                 .padding(.bottom, 34) // Adjust for home indicator
                 .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
             }

@@ -302,7 +302,7 @@ struct TimelineCategoryRow: View {
     var onReceiptTap: ((String) -> Void)?
     
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
+        HStack(alignment: .top, spacing: 8) {
             // Timeline Column
             VStack(spacing: 0) {
                 ZStack {
@@ -315,7 +315,7 @@ struct TimelineCategoryRow: View {
                     Image(systemName: catGroup.category.icon)
                         .font(.system(size: 18))
                         .foregroundColor(catGroup.category.color)
-                        .offset(x: -30)
+                        .offset(x: -25)
                 }
                 
                 if !isLast {
@@ -325,7 +325,7 @@ struct TimelineCategoryRow: View {
                         .frame(maxHeight: .infinity)
                 }
             }
-            .frame(width: 44)
+            .frame(width: 28)
             
             // Content Column
             VStack(alignment: .leading, spacing: 10) {
@@ -337,23 +337,23 @@ struct TimelineCategoryRow: View {
                     
                     if let method = catGroup.paymentMethod {
                         Text(method)
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 13, weight: .black))
                             .foregroundColor(.gray)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
                             .background(Color.gray.opacity(0.1))
-                            .comicBorder(width: 1, cornerRadius: 4)
+                            .comicBorder(width: 1.5, cornerRadius: 4)
                     }
                     
                     if let payer = catGroup.payerName {
                         HStack(spacing: 4) {
                             Text(payer)
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.system(size: 13, weight: .black))
                                 .foregroundColor(.black)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(MangaTheme.yellow.opacity(0.3))
-                                .comicBorder(width: 1, cornerRadius: 4)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(MangaTheme.yellow.opacity(0.8))
+                                .comicBorder(width: 1.5, cornerRadius: 4)
                             
                             // Receipts icons next to payer
                             if !catGroup.receiptUrls.isEmpty {
@@ -362,10 +362,11 @@ struct TimelineCategoryRow: View {
                                         onReceiptTap?(url)
                                     }) {
                                         Image(systemName: "magnifyingglass")
-                                            .font(.system(size: 10, weight: .black))
-                                            .padding(2)
-                                            .background(Color.white)
-                                            .comicBorder(width: 1, cornerRadius: 4)
+                                            .font(.system(size: 14, weight: .black))
+                                            .foregroundColor(.white)
+                                            .padding(4)
+                                            .background(MangaTheme.pink)
+                                            .comicBorder(width: 1.5, cornerRadius: 6)
                                     }
                                     .buttonStyle(PlainButtonStyle())
                                 }
@@ -377,11 +378,12 @@ struct TimelineCategoryRow: View {
                             Button(action: {
                                 onReceiptTap?(url)
                             }) {
-                                Image(systemName: "magnifyingglass")
-                                    .font(.system(size: 10, weight: .black))
-                                    .padding(2)
-                                    .background(Color.white)
-                                    .comicBorder(width: 1, cornerRadius: 4)
+                                        Image(systemName: "magnifyingglass")
+                                            .font(.system(size: 14, weight: .black))
+                                            .foregroundColor(.white)
+                                            .padding(4)
+                                            .background(MangaTheme.pink)
+                                            .comicBorder(width: 1.5, cornerRadius: 6)
                             }
                             .buttonStyle(PlainButtonStyle())
                         }
