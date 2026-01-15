@@ -46,6 +46,15 @@ struct CategoryStat: Identifiable {
     let change: String?
 }
 
+struct PaymentMethodStat: Identifiable {
+    let id = UUID()
+    let name: String
+    let amount: Double
+    let type: String // "cash" or "credit_card"
+    let billingDay: Int?
+    let period: String
+}
+
 class DashboardViewModel: ObservableObject {
     @Published var selectedYear: Int = Calendar.current.component(.year, from: Date()) {
         didSet { Task { await fetchDashboardData() } }
@@ -68,8 +77,15 @@ class DashboardViewModel: ObservableObject {
     @Published var monthlyLimit: Double = 10000.0
     @Published var years: [Int] = [Calendar.current.component(.year, from: Date())]
     @Published var categoryStats: [CategoryStat] = []
-    @Published var reportType: String = "expense" {
-        didSet { calculateChartSegments(txs: transactions, categories: categories) }
+    @Published var paymentMethodStats: [PaymentMethodStat] = []
+    @Published var reportType: String = "expense" { // "expense", "income", "billing"
+        didSet { 
+            if reportType == "billing" {
+                chartSegments = []
+            } else {
+                calculateChartSegments(txs: transactions, categories: categories)
+            }
+        }
     }
     
     @Published var weatherIcon: String = "sun.max.fill"
@@ -380,6 +396,9 @@ class DashboardViewModel: ObservableObject {
             // Calculate Chart Segments
             calculateChartSegments(txs: txs, categories: cats)
             
+            // Calculate Payment Method Stats
+            calculatePaymentMethodStats(currentMonthTxs: txs, prevMonthTxs: prevTxs, cards: cards)
+            
         } catch {
             print("Error fetching dashboard data: \(error)")
         }
@@ -432,6 +451,77 @@ class DashboardViewModel: ObservableObject {
         
         self.chartSegments = segments
     }
+    
+    private func calculatePaymentMethodStats(currentMonthTxs: [TransactionRecord], prevMonthTxs: [TransactionRecord], cards: [CreditCardRecord]) {
+        let calendar = Calendar.current
+        var stats: [PaymentMethodStat] = []
+        
+        // 1. Cash (Natural Month)
+        let cashTxs = currentMonthTxs.filter { $0.credit_card_id == nil && $0.type == "expense" }
+        let cashTotal = cashTxs.reduce(0) { $0 + $1.amount }
+        
+        var components = DateComponents()
+        components.year = selectedYear
+        components.month = selectedMonth + 1
+        components.day = 1
+        if let startDate = calendar.date(from: components),
+           let endDate = calendar.date(byAdding: .month, value: 1, to: startDate)?.addingTimeInterval(-1) {
+            let periodStr = "\(Self.shortDateFormatter.string(from: startDate)) - \(Self.shortDateFormatter.string(from: endDate))"
+            stats.append(PaymentMethodStat(name: "現金", amount: cashTotal, type: "cash", billingDay: nil, period: periodStr))
+        }
+        
+        // 2. Credit Cards (Billing Cycle)
+        let allTxs = prevMonthTxs + currentMonthTxs // Covers roughly 60 days
+        
+        for card in cards {
+            // Calculate Period: ends at card.billing_day of selected month
+            // If billing day is 10, period is (selectedMonth-1)/11 to selectedMonth/10
+            
+            var endComponents = DateComponents()
+            endComponents.year = selectedYear
+            endComponents.month = selectedMonth + 1
+            endComponents.day = card.billing_day
+            
+            if let cycleEndDate = calendar.date(from: endComponents) {
+                if let cycleStartDate = calendar.date(byAdding: .month, value: -1, to: cycleEndDate)?.addingTimeInterval(86400) { // +1 day
+                    
+                    let cardTxs = allTxs.filter { tx in
+                        guard tx.credit_card_id == card.id && tx.type == "expense" else { return false }
+                        guard let txDateStr = tx.transaction_date else { return false }
+                        
+                        let txDate: Date?
+                        if let d = Self.isoFormatter.date(from: txDateStr) { txDate = d }
+                        else if let d = Self.isoFormatterNoFractional.date(from: txDateStr) { txDate = d }
+                        else if let d = Self.simpleDateFormatter.date(from: String(txDateStr.prefix(10))) { txDate = d }
+                        else { txDate = nil }
+                        
+                        guard let d = txDate else { return false }
+                        // Use a small epsilon or compare components to be safe, but date comparison is usually fine
+                        return d >= cycleStartDate && d <= cycleEndDate
+                    }
+                    
+                    let cardTotal = cardTxs.reduce(0) { $0 + $1.amount }
+                    let periodStr = "\(Self.shortDateFormatter.string(from: cycleStartDate)) - \(Self.shortDateFormatter.string(from: cycleEndDate))"
+                    
+                    stats.append(PaymentMethodStat(
+                        name: card.card_name,
+                        amount: cardTotal,
+                        type: "credit_card",
+                        billingDay: card.billing_day,
+                        period: periodStr
+                    ))
+                }
+            }
+        }
+        
+        self.paymentMethodStats = stats
+    }
+    
+    private static let shortDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM/dd"
+        return formatter
+    }()
     
     func getCategoryIcon(for transaction: TransactionRecord) -> String {
         // Just use the first line item's category for simplicity
