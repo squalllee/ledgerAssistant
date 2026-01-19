@@ -1,10 +1,15 @@
 import Foundation
+import Combine
+import SwiftUI
 import Supabase
 import UIKit
+import AuthenticationServices
 
 // MARK: - Supabase Manager
-class SupabaseManager {
+final class SupabaseManager: ObservableObject {
     static let shared = SupabaseManager()
+    
+    @Published var session: Session?
     
     // Load credentials from Secrets.plist
     private var supabaseURL: URL {
@@ -18,7 +23,31 @@ class SupabaseManager {
     
     private lazy var client = SupabaseClient(supabaseURL: supabaseURL, supabaseKey: supabaseKey)
     
-    private init() {}
+    // Auth session
+    var currentUser: User? {
+        return session?.user
+    }
+    
+    var currentUserId: UUID? {
+        return currentUser?.id ?? UUID(uuidString: "de571e1c-681c-44a0-a823-45f4b82b3dd5")
+    }
+    
+    private init() {
+        Task {
+            // Get initial session
+            let initialSession = try? await client.auth.session
+            await MainActor.run {
+                self.session = initialSession
+            }
+            
+            // Listen to auth changes
+            for await (_, session) in client.auth.authStateChanges {
+                await MainActor.run {
+                    self.session = session
+                }
+            }
+        }
+    }
     
     private func loadSecret(named key: String) -> String {
         guard let path = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
@@ -28,6 +57,44 @@ class SupabaseManager {
             return ""
         }
         return value
+    }
+    
+    
+    // MARK: - Auth
+    
+    func signIn(email: String) async throws {
+        try await client.auth.signInWithOTP(email: email, redirectTo: nil, shouldCreateUser: true)
+    }
+    
+    func verifyOTP(email: String, token: String) async throws {
+        try await client.auth.verifyOTP(email: email, token: token, type: .magiclink)
+    }
+    
+    func signInWithApple(idToken: String, nonce: String?) async throws {
+        try await client.auth.signInWithIdToken(
+            credentials: .init(
+                provider: .apple,
+                idToken: idToken,
+                nonce: nonce
+            )
+        )
+    }
+    
+    func signInWithGoogle(idToken: String) async throws {
+        try await client.auth.signInWithIdToken(
+            credentials: .init(
+                provider: .google,
+                idToken: idToken
+            )
+        )
+    }
+    
+    func signOut() async throws {
+        try await client.auth.signOut()
+    }
+    
+    func getSession() async throws -> Session? {
+        return try await client.auth.session
     }
     
     // MARK: - API Calls
@@ -151,8 +218,8 @@ class SupabaseManager {
         
         var query = client
             .from("transactions")
-            .select("*, line_items:transaction_line_items!inner(*)")
-            .eq("line_items.user_id", value: userId)
+            .select("*, transaction_line_items(*)")
+            .eq("user_id", value: userId)
         
         if let startDate = startDate {
             let startStr = formatter.string(from: startDate)

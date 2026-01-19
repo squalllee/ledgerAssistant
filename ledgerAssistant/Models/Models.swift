@@ -12,10 +12,14 @@ struct ProfileRecord: Codable {
 }
 
 struct CategoryRecord: Codable, Identifiable {
-    var id: UUID?
+    var id: String?
     var name: String
     var icon: String?
     var color: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, icon, color
+    }
 }
 
 struct CreditCardRecord: Codable, Identifiable {
@@ -44,10 +48,10 @@ struct TransactionRecord: Codable, Identifiable {
     var receipt_url: String?
     
     // Virtual property for line items (decoded from join)
-    var line_items: [TransactionLineItemRecord]?
+    var transaction_line_items: [TransactionLineItemRecord]?
     
     enum CodingKeys: String, CodingKey {
-        case id, user_id, credit_card_id, type, amount, note, transaction_date, receipt_url, line_items
+        case id, user_id, credit_card_id, type, amount, note, transaction_date, receipt_url, transaction_line_items
     }
     
     // Custom encoding to skip line_items during insert/upsert
@@ -61,7 +65,7 @@ struct TransactionRecord: Codable, Identifiable {
         try container.encodeIfPresent(note, forKey: .note)
         try container.encodeIfPresent(transaction_date, forKey: .transaction_date)
         try container.encodeIfPresent(receipt_url, forKey: .receipt_url)
-        // We SKIP encoding line_items because it's not a real column in the transactions table
+        // We SKIP encoding transaction_line_items because it's not a real column in the transactions table
     }
 }
 
@@ -72,9 +76,13 @@ struct TransactionLineItemRecord: Codable, Identifiable {
     var payer_name: String? // Added to preserve name even if member is deleted
     var name: String
     var amount: Double
-    var quantity: Int
-    var category_id: UUID?
+    var quantity: Int?
+    var category_id: String?
     var title: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, transaction_id, user_id, payer_name, name, amount, quantity, category_id, title
+    }
 }
 
 

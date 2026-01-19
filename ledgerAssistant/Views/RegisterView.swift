@@ -9,7 +9,7 @@ struct UIItem: Identifiable {
     let id = UUID()
     var name: String
     var amount: Double
-    var category_id: UUID?
+    var category_id: String?
     var selectedPayers: Set<UUID> 
 }
 
@@ -41,7 +41,9 @@ struct RegisterView: View {
     @State private var addScannerSource: UIImagePickerController.SourceType = .camera
     @State private var isAppending = false
     
-    private let userId = UUID(uuidString: "DE571E1C-681C-44A0-A823-45F4B82B3DD5")!
+    private var userId: UUID {
+        return SupabaseManager.shared.currentUserId ?? UUID()
+    }
     
     var body: some View {
         NavigationView {
@@ -103,6 +105,29 @@ struct RegisterView: View {
                                 .comicBorder(width: 3, cornerRadius: 15)
                                 .padding(.top)
 
+                                // Payment Method Section
+                                VStack(alignment: .leading, spacing: 12) {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "creditcard.circle.fill")
+                                            .foregroundColor(.black)
+                                        Text("付款方式")
+                                            .font(.system(size: 16, weight: .black))
+                                    }
+                                    
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 12) {
+                                            paymentButton(title: "現金", id: "CASH", icon: "banknote")
+                                            
+                                            ForEach(creditCards) { card in
+                                                paymentButton(title: card.card_name, id: card.id?.uuidString ?? "", icon: "creditcard")
+                                            }
+                                        }
+                                        .padding(.horizontal, 2)
+                                        .padding(.vertical, 4)
+                                    }
+                                }
+                                .padding(.vertical, 8)
+
                                 // Groups Section
                                 ForEach($sourceGroups) { $group in
                                     VStack(alignment: .leading, spacing: 16) {
@@ -144,9 +169,9 @@ struct RegisterView: View {
                                                 
                                                 HStack {
                                                     Picker("類別", selection: $item.category_id) {
-                                                        Text("選擇類別").tag(nil as UUID?)
+                                                        Text("選擇類別").tag(nil as String?)
                                                         ForEach(categories) { cat in
-                                                            Text(cat.name).tag(cat.id as UUID?)
+                                                            Text(cat.name).tag(cat.id as String?)
                                                         }
                                                     }
                                                     .pickerStyle(MenuPickerStyle())

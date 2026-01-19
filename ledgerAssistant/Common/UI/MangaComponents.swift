@@ -331,7 +331,7 @@ struct TimelineCategoryRow: View {
             VStack(alignment: .leading, spacing: 5) {
                 // Category Header
                 HStack(alignment: .center, spacing: 8) {
-                    Text(catGroup.category.rawValue)
+                    Text(catGroup.categoryName)
                         .font(.system(size: 18, weight: .black))
                         .foregroundColor(.black)
                     

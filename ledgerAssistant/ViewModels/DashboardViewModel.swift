@@ -19,6 +19,7 @@ struct TimelineItem: Identifiable {
 struct TimelineCategoryGroup: Identifiable {
     let id: String // Use stable combination ID
     let category: LedgerCategory
+    let categoryName: String // The actual name from DB
     let items: [TimelineItem]
     let total: Double
     let receiptUrls: [String]
@@ -41,8 +42,8 @@ struct SelectedImage: Identifiable {
 struct CategoryStat: Identifiable {
     let id: UUID = UUID()
     let category: LedgerCategory
-    let amount: Double
-    let proportion: Double
+    var amount: Double
+    var proportion: Double
     let change: String?
 }
 
@@ -83,7 +84,7 @@ class DashboardViewModel: ObservableObject {
             if reportType == "billing" {
                 chartSegments = []
             } else {
-                calculateChartSegments(txs: transactions, categories: categories)
+                calculateChartSegments(txs: transactions, categories: allCategories)
             }
         }
     }
@@ -127,36 +128,51 @@ class DashboardViewModel: ObservableObject {
     
     var filteredTransactions: [TransactionRecord] {
         guard let selected = selectedCategory else { return transactions }
-        guard let catRecord = categories.first(where: { $0.name == selected.rawValue }) else { return [] }
         
         return transactions.filter { tx in
-            tx.line_items?.contains(where: { $0.category_id == catRecord.id }) ?? false
+            let items = tx.transaction_line_items ?? []
+            if items.isEmpty {
+                return selected == .other
+            }
+            return items.contains { item in
+                self.resolveLedgerCategory(for: item.category_id) == selected
+            }
         }
     }
     
     var groupedTransactions: [TransactionGroup] {
-        let filtered = transactions // We start with all transactions for the month
+        let filtered = transactions 
         
         return filtered.compactMap { tx in
             guard let txId = tx.id else { return nil }
             
-            let allItems = tx.line_items ?? []
+            let allItems = tx.transaction_line_items ?? []
             
             // Filter line items based on selected category if any
             let displayItems: [TransactionLineItemRecord]
-            if let selected = selectedCategory,
-               let catRecord = categories.first(where: { $0.name == selected.rawValue }) {
-                displayItems = allItems.filter { $0.category_id == catRecord.id }
+            if let selected = selectedCategory {
+                displayItems = allItems.filter { item in
+                    self.resolveLedgerCategory(for: item.category_id) == selected
+                }
+                
+                // If it's the other category and items are empty, the whole transaction is "Other"
+                if allItems.isEmpty && selected == .other {
+                    return TransactionGroup(
+                        id: txId,
+                        date: formatDate(tx.transaction_date),
+                        subtotal: tx.amount,
+                        receiptUrl: tx.receipt_url,
+                        lineItems: [], 
+                        originalTransaction: tx
+                    )
+                }
+                
+                if displayItems.isEmpty { return nil }
             } else {
                 displayItems = allItems
             }
             
-            // If we have a category filter, and this transaction has no items in that category, skip it
-            if selectedCategory != nil && displayItems.isEmpty {
-                return nil
-            }
-            
-            let subtotal = displayItems.reduce(0) { $0 + $1.amount }
+            let subtotal = displayItems.isEmpty ? tx.amount : displayItems.reduce(0) { $0 + $1.amount }
             
             return TransactionGroup(
                 id: txId,
@@ -172,75 +188,129 @@ class DashboardViewModel: ObservableObject {
     }
     
     var timelineGroups: [TimelineDateGroup] {
-        let allTxs = transactions
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.maximumFractionDigits = 0
-        
-        // Group by date string
-        let groupedByDate = Dictionary(grouping: allTxs) { formatDate($0.transaction_date) }
+        let groupedByDate = Dictionary(grouping: transactions) { formatDate($0.transaction_date) }
         
         return groupedByDate.map { (dateStr, txs) in
-            // Calculate daily total
-            let dailyTotal = txs.reduce(0) { $0 + $1.amount }
-            
-            // Generate category groups for each transaction separately
-            let categoryGroups = txs.flatMap { tx -> [TimelineCategoryGroup] in
-                let itemsByCat = Dictionary(grouping: tx.line_items ?? []) { item in
-                    categories.first(where: { $0.id == item.category_id })?.name ?? ""
-                }
-                
-                return itemsByCat.map { (catName, items) in
-                    let cat = LedgerCategory(rawValue: catName) ?? .other
-                    let txIdStr = tx.id?.uuidString ?? UUID().uuidString
-                    
-                    var pMethod: String? = "現金"
-                    if let cardId = tx.credit_card_id {
-                        pMethod = self.creditCards.first(where: { $0.id == cardId })?.card_name
-                    }
-                    
-                    // Resolve Payer Names
-                    let payerNames = Set(items.compactMap { $0.payer_name })
-                    var pName: String? = nil
-                    if !payerNames.isEmpty {
-                        if payerNames.count > 1 {
-                            pName = "多位"
-                        } else {
-                            pName = payerNames.first
-                        }
-                    }
-
-                    return TimelineCategoryGroup(
-                        id: "\(txIdStr)-\(catName)",
-                        category: cat,
-                        items: items.map { TimelineItem(name: $0.name, amount: $0.amount) },
-                        total: items.reduce(0) { $0 + $1.amount },
-                        receiptUrls: [tx.receipt_url].compactMap { $0 }.filter { !$0.isEmpty },
-                        paymentMethod: pMethod,
-                        payerName: pName
-                    )
-                }
-            }.sorted { 
-                // Grouping by category name first, then by amount
-                if $0.category == $1.category {
-                    return $0.total > $1.total
-                }
-                return $0.category.rawValue < $1.category.rawValue
-            }
-            
-            return TimelineDateGroup(
-                displayDate: dateStr,
-                dailyTotal: dailyTotal,
-                categoryGroups: categoryGroups
-            )
+            self.createTimelineDateGroup(dateStr: dateStr, txs: txs)
         }.sorted { $0.displayDate > $1.displayDate }
     }
+
+    private func createTimelineDateGroup(dateStr: String, txs: [TransactionRecord]) -> TimelineDateGroup {
+        let dailyTotal = txs.reduce(0) { $0 + $1.amount }
+        
+        let categoryGroups = txs.flatMap { tx in
+            self.processTransactionForTimeline(tx)
+        }.sorted { 
+            if $0.category == $1.category {
+                return $0.total > $1.total
+            }
+            return $0.category.rawValue < $1.category.rawValue
+        }
+        
+        return TimelineDateGroup(
+            displayDate: dateStr,
+            dailyTotal: dailyTotal,
+            categoryGroups: categoryGroups
+        )
+    }
+
+    private func processTransactionForTimeline(_ tx: TransactionRecord) -> [TimelineCategoryGroup] {
+        let txIdStr = tx.id?.uuidString ?? UUID().uuidString
+        let lineItems = tx.transaction_line_items ?? []
+        
+        var pMethod: String? = "現金"
+        if let cardId = tx.credit_card_id {
+            pMethod = self.creditCards.first(where: { $0.id == cardId })?.card_name
+        }
+        
+        if lineItems.isEmpty {
+            let txTitle = getTransactionTitle(for: tx)
+            return [TimelineCategoryGroup(
+                id: "\(txIdStr)-none",
+                category: .other,
+                categoryName: LedgerCategory.other.rawValue,
+                items: [TimelineItem(name: txTitle, amount: tx.amount)],
+                total: tx.amount,
+                receiptUrls: [tx.receipt_url].compactMap { $0 }.filter { !$0.isEmpty },
+                paymentMethod: pMethod,
+                payerName: nil
+            )]
+        }
+
+        // Group items by their resolved LedgerCategory
+        let itemsByCat = Dictionary(grouping: lineItems) { item in
+            self.resolveLedgerCategory(for: item.category_id)
+        }
+        
+        return itemsByCat.map { (cat, items) in
+            // Get the actual display name from the first item's category record
+            var actualDbName = cat.rawValue
+            if let firstCatId = items.first?.category_id {
+                let normalizedId = firstCatId.lowercased()
+                if let dbCat = allCategories.first(where: { $0.id?.lowercased() == normalizedId }) {
+                    actualDbName = dbCat.name
+                }
+            }
+            
+            // Resolve Payer Names
+            let payerNames = Set(items.compactMap { $0.payer_name })
+            var pName: String? = nil
+            if !payerNames.isEmpty {
+                pName = payerNames.count > 1 ? "多位" : payerNames.first
+            }
+
+            return TimelineCategoryGroup(
+                id: "\(txIdStr)-\(cat.rawValue)",
+                category: cat,
+                categoryName: actualDbName,
+                items: items.map { TimelineItem(name: $0.name, amount: $0.amount) },
+                total: items.reduce(0) { $0 + $1.amount },
+                receiptUrls: [tx.receipt_url].compactMap { $0 }.filter { !$0.isEmpty },
+                paymentMethod: pMethod,
+                payerName: pName
+            )
+        }
+    }
+
+    private func resolveLedgerCategory(for categoryId: String?) -> LedgerCategory {
+        guard let id = categoryId, !id.isEmpty else { return .other }
+        
+        let normalizedId = id.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // 1. Try to find by ID first
+        if let dbCat = allCategories.first(where: { $0.id?.lowercased() == normalizedId }) {
+            if let localCat = LedgerCategory(rawValue: dbCat.name) {
+                return localCat
+            }
+            
+            // Handle variants of "Other" or name mismatches
+            let name = dbCat.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            if name == "其他" || name == "其它" {
+                return .other
+            }
+            
+            if let localCat = LedgerCategory(rawValue: name) {
+                return localCat
+            }
+        }
+        
+        // 2. Fallback: If ID is actually the name (migration artifact), match by name
+        for cat in LedgerCategory.allCases {
+            if normalizedId == cat.rawValue || normalizedId == cat.id {
+                return cat
+            }
+        }
+        
+        return .other
+    }
     
-    private var categories: [CategoryRecord] = []
+    @Published var allCategories: [CategoryRecord] = []
     
     let months = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"]
     
-    private let userId = UUID(uuidString: "DE571E1C-681C-44A0-A823-45F4B82B3DD5")! 
+    private var userId: UUID {
+        return SupabaseManager.shared.currentUserId ?? UUID()
+    }
     
     init() {
         // Forward speechManager's changes
@@ -354,7 +424,7 @@ class DashboardViewModel: ObservableObject {
             
             let (txs, prevTxs, cats, profile, family, cards) = try await (fetchedTransactions, fetchedPrevTransactions, fetchedCategories, fetchedProfile, fetchedFamily, fetchedCards)
             
-            self.categories = cats
+            self.allCategories = cats
             self.familyMembers = family
             self.creditCards = cards
             self.transactions = txs // Set transactions LAST
@@ -406,50 +476,43 @@ class DashboardViewModel: ObservableObject {
     
     private func calculateChartSegments(txs: [TransactionRecord], categories: [CategoryRecord]) {
         let filteredTxs = txs.filter { $0.type == reportType }
-        let totalAmount = filteredTxs.reduce(0) { $0 + $1.amount }
         
-        // Use monthlyLimit for proportions if it's expense, otherwise just use totalAmount
-        let denominator = reportType == "expense" ? max(1.0, monthlyLimit) : max(1.0, totalAmount)
+        // 1. Group and resolved category amounts
+        var mappedStats: [LedgerCategory: Double] = [:]
+        for cat in LedgerCategory.allCases { mappedStats[cat] = 0 }
         
-        // Group amounts by category_id from line items
-        var categoryAmounts: [UUID: Double] = [:]
         for tx in filteredTxs {
-            for item in tx.line_items ?? [] {
-                if let catId = item.category_id {
-                    categoryAmounts[catId, default: 0] += item.amount
-                } else {
-                    // Group unknown categories under "Other" if possible
-                    let otherCatId = categories.first(where: { $0.name == LedgerCategory.other.rawValue })?.id
-                    if let oid = otherCatId {
-                        categoryAmounts[oid, default: 0] += item.amount
-                    }
+            let items = tx.transaction_line_items ?? []
+            if items.isEmpty {
+                mappedStats[.other, default: 0] += tx.amount
+            } else {
+                for item in items {
+                    let cat = resolveLedgerCategory(for: item.category_id)
+                    mappedStats[cat, default: 0] += item.amount
                 }
             }
         }
         
-        // Calculate Category Stats first
-        var stats: [CategoryStat] = []
+        // 2. Create final stats list and calculate proportions
+        let totalSum = mappedStats.values.reduce(0, +)
+        let denominator = max(1.0, totalSum)
+        
+        var finalStats: [CategoryStat] = []
         for cat in LedgerCategory.allCases {
-            let catRecord = categories.first { $0.name == cat.rawValue }
-            let amount = categoryAmounts[catRecord?.id ?? UUID()] ?? 0
-            let proportion = amount / max(1.0, denominator)
-            stats.append(CategoryStat(category: cat, amount: amount, proportion: proportion, change: nil))
+            let amt = mappedStats[cat] ?? 0
+            finalStats.append(CategoryStat(
+                category: cat,
+                amount: amt,
+                proportion: amt / denominator,
+                change: nil
+            ))
         }
         
-        // Sort by amount descending
-        let sortedStats = stats.sorted { $0.amount > $1.amount }
-        self.categoryStats = sortedStats
-        
-        // Generate Chart Segments from the sorted stats to ensure color consistency
-        var segments: [ChartSegment] = []
-        for stat in sortedStats {
-            if stat.amount > 0 {
-                // Ensure we use the color defined in LedgerCategory
-                segments.append(ChartSegment(proportion: stat.proportion, color: stat.category.color))
-            }
-        }
-        
-        self.chartSegments = segments
+        // 3. Sort and Update
+        let sorted = finalStats.sorted { $0.amount > $1.amount }
+        self.categoryStats = sorted
+        self.chartSegments = sorted.filter { $0.amount > 0 }
+            .map { ChartSegment(proportion: $0.proportion, color: $0.category.color) }
     }
     
     private func calculatePaymentMethodStats(currentMonthTxs: [TransactionRecord], prevMonthTxs: [TransactionRecord], cards: [CreditCardRecord]) {
@@ -525,25 +588,27 @@ class DashboardViewModel: ObservableObject {
     
     func getCategoryIcon(for transaction: TransactionRecord) -> String {
         // Just use the first line item's category for simplicity
-        if let catId = transaction.line_items?.first?.category_id,
-           let cat = categories.first(where: { $0.id == catId }),
+        if let catId = transaction.transaction_line_items?.first?.category_id,
+           let cat = allCategories.first(where: { $0.id == catId }),
            let icon = cat.icon {
             return icon
         }
         return "ellipsis.circle.fill"
     }
     
-    func getCategoryIconForId(_ categoryId: UUID?) -> String {
-        guard let id = categoryId else { return "ellipsis.circle.fill" }
-        if let cat = categories.first(where: { $0.id == id }), let icon = cat.icon {
+    func getCategoryIconForId(_ categoryId: String?) -> String {
+        guard let id = categoryId, !id.isEmpty else { return "ellipsis.circle.fill" }
+        let normalizedId = id.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if let cat = allCategories.first(where: { $0.id?.lowercased() == normalizedId }), let icon = cat.icon {
             return icon
         }
         return "ellipsis.circle.fill"
     }
     
-    func getCategoryColorForId(_ categoryId: UUID?) -> Color {
-        guard let id = categoryId else { return .gray }
-        if let catRecord = categories.first(where: { $0.id == id }) {
+    func getCategoryColorForId(_ categoryId: String?) -> Color {
+        guard let id = categoryId, !id.isEmpty else { return .gray }
+        let normalizedId = id.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if let catRecord = allCategories.first(where: { $0.id?.lowercased() == normalizedId }) {
             let ledgerCat = LedgerCategory(rawValue: catRecord.name) ?? .other
             return ledgerCat.color
         }
@@ -552,8 +617,8 @@ class DashboardViewModel: ObservableObject {
     
     func getTransactionTitle(for transaction: TransactionRecord) -> String {
         // 1. Try to get title from the first line item
-        if let firstItem = transaction.line_items?.first, !firstItem.name.isEmpty {
-            if (transaction.line_items?.count ?? 0) > 1 {
+        if let firstItem = transaction.transaction_line_items?.first, !firstItem.name.isEmpty {
+            if (transaction.transaction_line_items?.count ?? 0) > 1 {
                 return "\(firstItem.name) 等..."
             }
             return firstItem.name
@@ -636,15 +701,26 @@ class DashboardViewModel: ObservableObject {
         formatter.maximumFractionDigits = 0
         
         if let selected = selectedCategory {
-            // Find category UUID in our categories list
-            if let catRecord = categories.first(where: { $0.name == selected.rawValue }) {
-                let amount = transactions.filter { tx in
-                    tx.type == "expense" && (tx.line_items?.contains(where: { $0.category_id == catRecord.id }) ?? false)
-                }.reduce(0) { $0 + $1.amount }
-                self.totalExpenditure = formatter.string(from: NSNumber(value: amount)) ?? "$\(Int(amount))"
-            } else {
-                self.totalExpenditure = "$0"
+            var totalAmount: Double = 0
+            
+            for tx in transactions {
+                guard tx.type == "expense" else { continue }
+                let items = tx.transaction_line_items ?? []
+                
+                if items.isEmpty {
+                    if selected == .other {
+                        totalAmount += tx.amount
+                    }
+                } else {
+                    for item in items {
+                        if self.resolveLedgerCategory(for: item.category_id) == selected {
+                            totalAmount += item.amount
+                        }
+                    }
+                }
             }
+            
+            self.totalExpenditure = formatter.string(from: NSNumber(value: totalAmount)) ?? "$\(Int(totalAmount))"
         } else {
             self.totalExpenditure = self.monthlyExpense
         }

@@ -3,6 +3,7 @@ import SwiftUI
 struct ProfileView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel = ProfileViewModel()
+    @EnvironmentObject var globalAuth: AuthViewModel
     
     var body: some View {
         NavigationView {
@@ -34,15 +35,24 @@ struct ProfileView: View {
                     
                     Spacer()
                     
-                    // Version Info
-                    VStack(spacing: 4) {
-                        Text("Ledger Assistant")
-                            .font(.system(size: 12, weight: .black))
-                        Text("Version 1.2.0 (Build 20260114)")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.gray)
+                    // Logout Button
+                    Button(action: {
+                        globalAuth.signOut()
+                        dismiss()
+                    }) {
+                        HStack {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                            Text("登出帳號")
+                        }
+                        .font(.system(size: 16, weight: .black))
+                        .foregroundColor(.red)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.white)
+                        .comicBorder(width: 3, cornerRadius: 15, color: .red)
                     }
-                    .padding(.bottom, 20)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 40)
                 }
             }
             .navigationTitle("設定")

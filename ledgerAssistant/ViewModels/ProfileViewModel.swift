@@ -25,8 +25,10 @@ class ProfileViewModel: ObservableObject {
     // Limits
     @Published var monthlyLimit: Double = 10000
     
-    // Hardcoded UserID for demonstration
-    private let userId = UUID(uuidString: "DE571E1C-681C-44A0-A823-45F4B82B3DD5")!
+    // User ID from SupabaseManager
+    private var userId: UUID {
+        return SupabaseManager.shared.currentUserId ?? UUID()
+    }
     
     func loadData() {
         isLoading = true
